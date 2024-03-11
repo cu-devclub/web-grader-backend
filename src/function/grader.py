@@ -41,7 +41,7 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
         submitfile = json.loads(f.read())
  
     # Filter code cell
-    codeCell = [i for i in submitfile["cells"] if i.get("cell_type") == "code"]
+    codeCell = [i for i in submitfile["cells"] if (i.get("cell_type") == "code" and i["metadata"].get("nbgrader") != None)]
 
     # Get solution cell
     solution = []
@@ -57,10 +57,12 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
             if ".write(" in solution[i][j]: return True, "This file contain file write method it may broke the additional assignment files"
 
     # Tester Location
-    testerL = []
+    testerL = ""
+    n = 0
     for i in range(len(codeCell)):
         if (codeCell[i]["metadata"]["nbgrader"]["solution"] == False) and (codeCell[i]["metadata"]["nbgrader"].get("points") == None) and len(codeCell[i]["source"]) >= 5:
-            testerL.append(i)
+            n = i
+            testerL = "".join(codeCell[i]["source"])
 
     # s
     testcaseL = []
@@ -77,6 +79,7 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
             if isOn:
                 testcaseL.append(temp)
                 temp = []
+                isOn = not isOn
                 continue
         if i == len(codeCell)-1:
             testcaseL.append(temp)
@@ -91,24 +94,24 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
 
 
     # making dict of tester that belong to each solution section
-    tester = {}
-    if len(solutionLocation) == len(testerL):
-        for i in range(len(solutionLocation)):
-            tester[solutionLocation[i]] = testerL[i]
-    else:
-        for i in range(len(solutionLocation)):
-            key = solutionLocation[i]
-            value = -1
-            for j in range(len(testerL)):
-                if(i < len(solutionLocation)-1):
-                    if key < testerL[j] < solutionLocation[i+1]:
-                        value = testerL[j]
-                        break
-                else:
-                    if key < testerL[j]:
-                        value = testerL[j]
-                        break
-            tester[key] = value
+    # tester = {}
+    # if len(solutionLocation) == len(testerL):
+    #     for i in range(len(solutionLocation)):
+    #         tester[solutionLocation[i]] = testerL[i]
+    # else:
+    #     for i in range(len(solutionLocation)):
+    #         key = solutionLocation[i]
+    #         value = -1
+    #         for j in range(len(testerL)):
+    #             if(i < len(solutionLocation)-1):
+    #                 if key < testerL[j] < solutionLocation[i+1]:
+    #                     value = testerL[j]
+    #                     break
+    #             else:
+    #                 if key < testerL[j]:
+    #                     value = testerL[j]
+    #                     break
+    #         tester[key] = value
     
     #check number of testcase list and solution
     if len(testcaseL) != len(solutionLocation):
@@ -117,9 +120,6 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
     score = []
     num = 0
     for i in range(len(solutionLocation)):
-        tr = ""
-        if tester[solutionLocation[i]] != -1:
-            tr = "".join(ScodeCell[tester[solutionLocation[i]]])
         temp_max_p = 0
         temp_cor_p = 0
         for j in testcaseL[i]:
@@ -130,7 +130,10 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
                     x = k.split("/")
                     test = test.replace(x[-1], k)
             try:
-                finalexec = ["".join(solution[i]), tr, test]
+                if(n == 0):
+                    finalexec = [testerL, "".join(solution[i]), test]
+                else:
+                    finalexec = ["".join(solution[i]), testerL, test]
                 f = StringIO()
 
                 with stopit.ThreadingTimeout(timeout) as context_manager:
@@ -146,7 +149,8 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
                         break
                 if(p): temp_cor_p += pointsL[num]
             except Exception:
-                print(traceback.format_exc())
+                pass
+                # print(traceback.format_exc())
             num += 1
         score.append([temp_cor_p, temp_max_p])
     return False, score
