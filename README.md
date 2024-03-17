@@ -10,6 +10,10 @@ make .env file
     PORT=
     HOST=
     dev=
+    DB_HOST=
+    DB_USER=
+    DB_PASS=
+    DB_NAME=
 
 and client_secrets.json (Generate from google api)
 
