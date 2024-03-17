@@ -35,6 +35,10 @@ jobs:
           envkey_HOST: ${{ secrets.HOST }}
           envkey_PORT: ${{ secrets.PORT }}
           envkey_dev: ${{ secrets.DEV }}
+          envkey_DBHOST: ${{ secrets.DBHOST }}
+          envkey_DBUSER: ${{ secrets.DBUSER }}
+          envkey_DBPASS: ${{ secrets.DBPASS }}
+          envkey_DBNAME: ${{ secrets.DBNAME }}
           file_name: .env
           directory: ./src/config/
       -
