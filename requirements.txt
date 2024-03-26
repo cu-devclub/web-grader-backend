@@ -10,3 +10,6 @@ Flask-SocketIO==5.3.6
 python-dotenv==1.0.0
 mysqlclient==2.2.1
 colorama==0.4.6
+mysql.connector
+stopit==1.1.2
+pymysql==1.1.0

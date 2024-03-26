@@ -1,4 +1,4 @@
-import grader
+import function.grader as grader
 import time
 
 addition = [

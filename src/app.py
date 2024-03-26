@@ -1,18 +1,18 @@
 # SYS
 import os
 from colorama import Fore, Style
-from dotenv import dotenv_values
 from importlib import import_module
 
 # Flask
 from flask_cors import CORS
-from flask import app, Flask, Response
+from flask import app, Flask, Response, g
 from flask_jwt_extended import JWTManager
 
 # Google
 from function.google import secret_key
 
-
+from function.db import get_db
+from function.loadconfig import config
 
 # import requests
 # from pip._vendor import cachecontrol
@@ -35,13 +35,8 @@ list_route = tree_route('route')
 
 # loop import route
 gbl = globals()
-print(list_route)
 for i in list_route:
-    print(i)
     gbl[i] = import_module(i)
-
-# load config
-config = dotenv_values("config/.env")
 
 # init api server
 app = Flask(__name__)
@@ -64,10 +59,27 @@ app.secret_key = secret_key
 def index():
     return Response("I'm a teapot so I sent 418 error.", status=418, mimetype='application/json')
 
+
+@app.before_request
+def before_request():
+    g.db = get_db()
+
+
+@app.teardown_request
+def teardown_request(exception=None):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+
+
+
+
 # loop add route to api server
 for i in gbl['list_route']:
-    app.add_url_rule('/'+i.replace('route.', '').replace('.', '/'), i, gbl[i].main, methods=['GET', 'POST'])
-    print(Fore.GREEN + i + Fore.YELLOW + " has been mounted to server as " + Style.RESET_ALL)
+    x = i.split("_")
+    app.add_url_rule('/'+x[0].replace('route.', '').replace('.', '/'), i, gbl[i].main, methods=x[1].split("-"))
+    print(Fore.GREEN + x[0] + "method " + Fore.CYAN + x[1] + Fore.YELLOW + " has been mounted to server as " + Fore.GREEN + x[0].replace('route.', '').replace('.', '/')+ Style.RESET_ALL)
 
 # start api server
 if __name__ == "__main__":
