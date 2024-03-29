@@ -64,7 +64,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             latest=auto
-            prefix=api-,onlatest=true
           tags: |
             type=ref,event=branch
             type=ref,event=pr
