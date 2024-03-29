@@ -1,5 +1,7 @@
 .env
 .json
+.ipynb
+.txt
 .venv/
 *.swp
 __pycache__
