@@ -2,6 +2,8 @@ from function.db import get_db
 from flask import request, jsonify
 import mysql.connector
 from function.AddUserClass import AddUserClass
+from function.AddClassEditor import AddClassEditor
+from function.GetCSYID import GetCSYID
 
 def main():
     DataJ = request.get_json()
