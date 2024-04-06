@@ -4,37 +4,35 @@ def main():
     try:
         
         #Param
-        class_id = request.args.get('class_id')
-        school_year = request.args.get('school_year')
+        class_id = request.args.get('CID')
         
         # Create a cursor
         cur = g.db.cursor()
 
         query = """
             SELECT
-            	QST.LAB,
+            	QST.Lab,
                 QST.Question,
                 LB.Name,
-                ASN.DueTime,
-                SMT.TimeStamp,
-                CASE WHEN SMT.TimeStamp IS NOT NULL THEN TRUE ELSE FALSE END As TurnIn,
-            	CASE WHEN ASN.DueTime <= SMT.TimeStamp THEN TRUE ELSE FALSE END AS Late
+                ASN.Due,
+                SMT.Timestamp,
+                QST.MaxScore,
+                SMT.Score,
+                CASE WHEN SMT.Timestamp IS NOT NULL THEN TRUE ELSE FALSE END As TurnIn,
+                CASE WHEN ASN.Due <= SMT.Timestamp THEN TRUE ELSE FALSE END AS Late
             FROM
             	question QST
-                INNER JOIN assign ASN ON QST.LAB = ASN.LAB
-                INNER JOIN submitted SMT ON QST.LAB = SMT.LAB AND QST.Question = SMT.Question
-                RIGHT JOIN lab LB ON QST.LAB = LB.LAB 
+                INNER JOIN lab LB ON QST.CSYID = LB.CSYID AND QST.Lab = LB.lab
+                INNER JOIN section SCT ON SCT.CSYID = QST.CSYID
+                INNER JOIN assign ASN ON SCT.CID = ASN.CID AND QST.Lab = ASN.Lab
+                INNER JOIN student STD ON STD.UID = %s AND STD.CID = ASN.CID
+                LEFT JOIN submitted SMT ON QST.CSYID = SMT.CSYID AND QST.Lab = SMT.Lab AND QST.Question = SMT.Question AND SMT.UID = STD.UID
             WHERE
-            	QST.ClassID = %s
-                AND QST.SchoolYear = %s
-                AND QST.ClassID = ASN.ClassID AND ASN.ClassID = SMT.ClassID AND SMT.SchoolYear = LB.SchoolYear
-                AND QST.SchoolYear = ASN.SchoolYear AND ASN.SchoolYear = SMT.SchoolYear AND SMT.SchoolYear = LB.SchoolYear
-            ORDER BY
-            	QST.LAB ASC, QST.Question ASC;
+            	QST.CSYID = %s
                  """
 
         # Execute a SELECT statement
-        cur.execute(query, (class_id, school_year))
+        cur.execute(query, (class_id))
         # Fetch all rows
         data = cur.fetchall()
 
@@ -44,7 +42,7 @@ def main():
         # Convert the result to the desired structure
         transformed_data = {}
         for row in data:
-            lab, question, name, due_time, timestamp, turn_in, late = row
+            lab, question, name, due_time, timestamp, Maxscore, score, turn_in, late = row
             lab = 'Lab'+str(lab)
             question = 'Q'+str(question)
         
