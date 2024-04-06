@@ -10,14 +10,14 @@ def main():
 
         query = """
             SELECT
-            	USR.EmailName,
+            	USR.UID,
                 USR.Email,
                 USR.Name,
                 USR.Role
             FROM
             	user USR
-            WHERE
-            	USR.Email = %s
+            WHERE 
+                Email= %s
         """
 
         # Execute a SELECT statement

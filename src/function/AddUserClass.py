@@ -1,9 +1,7 @@
 from function.db import get_db
 
-def AddUserClass(UserEmail, ClassID, SchoolYear, Section):
+def AddUserClass(dbAUC, cursor, UserEmail, ClassID, SchoolYear, Section):
     try:
-        conn = get_db()
-        cursor = conn.cursor()
 
         # Execute the SQL query to fetch the IDClass
         query_getclass = """
@@ -21,13 +19,16 @@ def AddUserClass(UserEmail, ClassID, SchoolYear, Section):
                 VALUES (%s, %s)
             """
             cursor.execute(query_insertUSC, (UserEmail, id_class[0]))
-            conn.commit()
+            dbAUC.commit()
             return True  # Return True if user added successfully
         else:
+            dbAUC.rollback()
             return False  # Return False if class not found
 
     except Exception as e:
+        dbAUC.rollback()
         return False  # Return False if an error occurred
     finally:
         cursor.close()
-        conn.close()
+        dbAUC.close()
+        print("An error occurred:", e)
