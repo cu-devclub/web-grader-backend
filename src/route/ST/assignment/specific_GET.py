@@ -4,43 +4,38 @@ def main():
     try:
         
         #Param
-        class_id = request.args.get('class_id')
-        speclab = request.args.get('speclab')
-        school_year = request.args.get('school_year')
+        Uid = request.args.get('UID')
+        Csyid = request.args.get('CSYID')
+        Lab = request.args.get('speclab')
         
         # Create a cursor
         cur = g.db.cursor()
 
         query = """
             SELECT
-            	QST.LAB,
+                QST.Lab,
                 LB.Name,
-                QST.ID,
+                QST.QID,
                 QST.Question,
-                ASN.DueTime,
-                SMT.TimeStamp,
+                ASN.Due,
+                SMT.Timestamp,
                 SMT.Score,
                 QST.MaxScore,
-                SMT.PathToFile AS TurnInFile,
-                ADF.PathToFile AS QuestionFile
+                SMT.TurnInFile
             FROM
             	question QST
-                INNER JOIN assign ASN ON QST.LAB = ASN.LAB
-                INNER JOIN submitted SMT ON QST.LAB = SMT.LAB AND QST.Question = SMT.Question
-                INNER JOIN addfile ADF ON QST.LAB =ADF.LAB
-                INNER JOIN lab LB ON QST.LAB = LB.LAB 
+                INNER JOIN lab LB ON QST.CSYID = LB.CSYID AND QST.Lab = LB.lab
+                INNER JOIN section SCT ON SCT.CSYID = QST.CSYID
+                INNER JOIN assign ASN ON SCT.CID = ASN.CID AND QST.Lab = ASN.Lab
+                INNER JOIN student STD ON STD.UID = %s AND STD.CID = ASN.CID
+                LEFT JOIN submitted SMT ON QST.CSYID = SMT.CSYID AND QST.Lab = SMT.Lab AND QST.Question = SMT.Question AND SMT.UID = STD.UID
             WHERE
-            	QST.ClassID = %s
-                AND QST.LAB = %s
-                AND QST.SchoolYear = %s
-                AND QST.ClassID = ASN.ClassID AND ASN.ClassID = SMT.ClassID AND SMT.ClassID = LB.ClassID
-                AND QST.SchoolYear = ASN.SchoolYear AND ASN.SchoolYear = SMT.SchoolYear AND SMT.SchoolYear = LB.SchoolYear
-            ORDER BY
-            	QST.LAB ASC, QST.Question ASC;
+            	QST.CSYID = %s
+                AND QST.Lab = %s
                     """
 
         # Execute a SELECT statement
-        cur.execute(query,(class_id,speclab,school_year))
+        cur.execute(query,(Uid,Csyid,Lab))
         # Fetch all rows
         data = cur.fetchall()
 
@@ -51,7 +46,7 @@ def main():
         transformed_data_list = []
         
         for row in data:
-            lab, lab_name, question_id, question, due_time, submission_time, score, max_score, turn_in_file, question_file = row
+            lab, lab_name, question_id, question, due_time, submission_time, score, max_score, turn_in_file = row
             lab_num = 'Lab' + str(lab)
         
             # Construct the question key
@@ -89,8 +84,21 @@ def main():
                     'MaxScore': max_score
                 }
         
-            if question_file not in lab_data['Files']:
-                lab_data['Files'].append(question_file)
+            query_files = """
+                SELECT
+                    PathToFile
+                FROM
+                    addfile ADF
+                WHERE
+                    ADF.CSYID = %s
+                    AND ADF.Lab = %s
+            """
+            cur.execute(query_files, (Csyid, lab))
+            files_data = cur.fetchall()
+            for file_row in files_data:
+                file_path = file_row[0]
+                if file_path not in lab_data['Files']:
+                    lab_data['Files'].append(file_path)
         
         # jsonify the transformed data list
         return jsonify(transformed_data_list[0])

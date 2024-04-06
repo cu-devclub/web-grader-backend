@@ -14,6 +14,7 @@ def main():
             	QST.LAB,
                 QST.Question,
                 USR.EmailName,
+                CLS.Section,
                 USR.Name,
                 SMT.TimeStamp,
                 SMT.Score,
@@ -46,7 +47,7 @@ def main():
         transformed_data = {}
 
         for row in data:
-            lab, question, emailname, name, timestamp, score, maxscore, duetime, turn_in, late = row
+            lab, question, emailname, section, name, timestamp, score, maxscore, duetime, turn_in, late = row
 
             # Convert turn_in and late to boolean values
             turn_in_bool = bool(turn_in)
@@ -54,7 +55,7 @@ def main():
 
             # Create LAB if it doesn't exist
             if emailname not in transformed_data:
-                transformed_data[emailname] = {"EmailName": emailname, "Name": name}
+                transformed_data[emailname] = {"EmailName": emailname, "Name": name, "Section":section}
 
             # Create LAB dictionary if it doesn't exist
             if f'LAB{lab}' not in transformed_data[emailname]:
