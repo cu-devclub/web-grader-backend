@@ -5,14 +5,14 @@ from importlib import import_module
 
 # Flask
 from flask_cors import CORS
-from flask import app, Flask, Response, g
+from flask import app, Flask, Response, g, send_from_directory, send_file
 from flask_jwt_extended import JWTManager
 
 # Google
 from function.google import secret_key
 
 from function.db import get_db
-from function.loadconfig import config
+from function.loadconfig import config, UPLOAD_FOLDER
 
 # import requests
 # from pip._vendor import cachecontrol
@@ -70,6 +70,24 @@ def teardown_request(exception=None):
     db = g.pop('db', None)
     if db is not None:
         db.close()
+
+
+
+@app.route('/Thumbnail/<filename>')
+def get_image_thumbnail(filename):
+    filepath = os.path.join(UPLOAD_FOLDER, 'Thumbnail', filename)
+    return send_from_directory(os.path.dirname(filepath), os.path.basename(filepath))
+
+@app.route("/image/<filename>", methods=["GET"])
+def get_image(filename):
+    image_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    file_extension = filename.split('.')[-1]
+    
+    # Check if the file extension is in the set of allowed image extensions
+    if file_extension.lower() in image_extensions:
+        return send_file(os.path.join(UPLOAD_FOLDER, 'Thumbnail', filename), mimetype=f"image/{file_extension}")
+    else:
+        return "Invalid image file format", 400  # Return a 400 Bad Request status for invalid image formats
 
 
 

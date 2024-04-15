@@ -1,23 +1,17 @@
-from function.db import get_db
-from flask import request, jsonify
 import mysql.connector
+from flask import request, jsonify
+
+from function.db import get_db
 
 def main():
-    CSYID = request.args.get('CSYID')
-    ClassName = request.args.get('ClassName')
-    ClassID = request.args.get('ClassID')
-    SchoolYear = request.args.get('SchoolYear')
-
-    CLS_data = (ClassName, ClassID, SchoolYear)
-
+    
+    CSYID = request.form.get('CSYID')
+    
     try:
         conn = get_db()
         cursor = conn.cursor()
-
         insert_class_query = "DELETE FROM class WHERE CSYID = %s;"
         cursor.execute(insert_class_query, (CSYID))
-
-        # Commit the transaction
         conn.commit()
         return jsonify({"Status": True}) 
     except mysql.connector.Error as error:
