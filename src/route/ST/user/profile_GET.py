@@ -1,4 +1,4 @@
-from flask import request, g, jsonify
+from flask import request, jsonify, g
 
 def main():
     try:
@@ -10,12 +10,12 @@ def main():
 
         query = """
             SELECT
-            	USR.UID,
+                USR.UID,
                 USR.Email,
                 USR.Name,
                 USR.Role
             FROM
-            	user USR
+                user USR
             WHERE 
                 Email= %s
         """
@@ -35,7 +35,7 @@ def main():
             transformed_data = {
                     'Name': Name,
                     'Email': Email,
-                    'Profile': Ename,
+                    'ID': Ename,
                     'Role': Role
                 }
             

@@ -3,6 +3,7 @@
 .ipynb
 .txt
 .venv/
+old
 *.swp
 __pycache__
 test.py

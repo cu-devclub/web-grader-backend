@@ -4,10 +4,10 @@ def main():
     try:
         #Param
         UID = request.args.get('UID')
-
+        
         # Create a cursor
         cur = g.db.cursor()
-
+        
         query = """
             SELECT DISTINCT
                 SCT.CID,
@@ -53,7 +53,7 @@ def main():
                 "Section": section,
                 "Thumbnail": thumbnail
             })
-
+            
         return jsonify(transformed_data)
 
     except Exception as e:

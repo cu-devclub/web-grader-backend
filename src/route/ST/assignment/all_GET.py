@@ -4,6 +4,7 @@ def main():
     try:
         
         #Param
+        student_id = request.args.get('SID')
         class_id = request.args.get('CID')
         
         # Create a cursor
@@ -11,28 +12,41 @@ def main():
 
         query = """
             SELECT
-            	QST.Lab,
+                QST.Lab,
                 QST.Question,
                 LB.Name,
                 ASN.Due,
                 SMT.Timestamp,
-                QST.MaxScore,
-                SMT.Score,
-                CASE WHEN SMT.Timestamp IS NOT NULL THEN TRUE ELSE FALSE END As TurnIn,
+                MaxScores.MaxScore AS Lab_MaxScore,
+                Scores.Score AS Lab_Score,
+                CASE WHEN SMT.Timestamp IS NOT NULL THEN TRUE ELSE FALSE END AS TurnIn,
                 CASE WHEN ASN.Due <= SMT.Timestamp THEN TRUE ELSE FALSE END AS Late
             FROM
-            	question QST
+                question QST
                 INNER JOIN lab LB ON QST.CSYID = LB.CSYID AND QST.Lab = LB.lab
                 INNER JOIN section SCT ON SCT.CSYID = QST.CSYID
                 INNER JOIN assign ASN ON SCT.CID = ASN.CID AND QST.Lab = ASN.Lab
                 INNER JOIN student STD ON STD.UID = %s AND STD.CID = ASN.CID
                 LEFT JOIN submitted SMT ON QST.CSYID = SMT.CSYID AND QST.Lab = SMT.Lab AND QST.Question = SMT.Question AND SMT.UID = STD.UID
+                LEFT JOIN (
+                    SELECT Lab, SUM(MaxScore) AS MaxScore
+                    FROM question
+                    WHERE CSYID = %s
+                    GROUP BY Lab
+                ) AS MaxScores ON QST.Lab = MaxScores.Lab 
+                LEFT JOIN (
+                    SELECT Lab, SUM(Score) AS Score
+                    FROM submitted
+                    WHERE CSYID = %s AND UID = %s
+                    GROUP BY Lab
+                ) AS Scores ON QST.Lab = Scores.Lab
             WHERE
-            	QST.CSYID = %s
+                QST.CSYID = %s;
+
                  """
 
         # Execute a SELECT statement
-        cur.execute(query, (class_id))
+        cur.execute(query, (student_id,class_id,class_id, student_id, class_id))
         # Fetch all rows
         data = cur.fetchall()
 
@@ -50,6 +64,8 @@ def main():
                 transformed_data[lab] = {
                     'Name':name,
                     'Due':due_time,
+                    'Maxscore' :int(Maxscore) if Maxscore else 0,
+                    'Score' : int(score) if score else 0
                 }
         
             if question not in transformed_data[lab]:
