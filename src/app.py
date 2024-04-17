@@ -102,4 +102,4 @@ for i in gbl['list_route']:
 # start api server
 if __name__ == "__main__":
     app.run(debug=bool(config['dev']), host=config['HOST'], port=int(config['PORT']))
-    
+
