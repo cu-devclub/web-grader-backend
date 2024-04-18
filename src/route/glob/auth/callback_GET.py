@@ -65,19 +65,16 @@ def main():
     # cursor.close()
     # connection.close()
 
-    expires_access = datetime.timedelta(days=7)
-    expires_refresh = datetime.timedelta(days=30)
+    expires_access = datetime.timedelta(days=30)
 
     access_token = create_access_token(identity=email, expires_delta=expires_access)
-    refresh_token = create_refresh_token(identity=email, expires_delta=expires_refresh)
     resp = jsonify({
         'success': True,
         'msg': '',
         'data': {
-            "Token": access_token,
             "Email": email
         }
     })
-    set_access_cookies(resp, refresh_token)
+    set_access_cookies(resp, access_token)
 
     return resp, 200

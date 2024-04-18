@@ -5,8 +5,8 @@ from importlib import import_module
 
 # Flask
 from flask_cors import CORS
-from flask import app, Flask, Response, g, send_from_directory, send_file
-from flask_jwt_extended import JWTManager
+from flask import app, Flask, Response, g, send_from_directory, send_file, jsonify
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 
 # Google
 from function.google import secret_key
