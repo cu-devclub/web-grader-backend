@@ -4,7 +4,7 @@ from colorama import Fore, Style
 from importlib import import_module
 
 # Flask
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from flask import app, Flask, Response, g, send_from_directory, send_file
 from flask_jwt_extended import JWTManager
 
@@ -41,13 +41,12 @@ for i in list_route:
 # init api server
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-app.config['CORS_HEADERS'] = 'Content-Type'
 
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "0" # to allow Http traffic for local dev
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" # to allow Http traffic for local dev
 
 # setup JWT
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+app.config['JWT_COOKIE_CSRF_PROTECT'] = True
 app.config['JWT_SECRET_KEY'] = config['JWT_SECRET_KEY']
 
 jwt = JWTManager(app)
@@ -57,7 +56,6 @@ app.secret_key = secret_key
 
 # add route to /
 @app.route('/')
-@cross_origin()
 def index():
     return Response("I'm a teapot so I sent 418 error.", status=418, mimetype='application/json')
 
