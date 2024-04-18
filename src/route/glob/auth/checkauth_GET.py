@@ -22,6 +22,7 @@ def main():
 
     # Execute a SELECT statement
     cur.execute(query,(email))
+    
     # Fetch all rows
     data = cur.fetchall()
 
