@@ -40,13 +40,13 @@ for i in list_route:
 
 # init api server
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=False)
 
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "0" # to allow Http traffic for local dev
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" # to allow Http traffic for local dev
 
 # setup JWT
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-app.config['JWT_COOKIE_CSRF_PROTECT'] = True
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 app.config['JWT_SECRET_KEY'] = config['JWT_SECRET_KEY']
 
 jwt = JWTManager(app)
