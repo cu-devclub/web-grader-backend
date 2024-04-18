@@ -43,7 +43,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" # to allow Http traffic for local dev
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "0" # to allow Http traffic for local dev
 
 # setup JWT
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
