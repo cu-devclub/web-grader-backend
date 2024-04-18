@@ -92,7 +92,6 @@ def get_image(filename):
 
 
 
-
 # loop add route to api server
 for i in gbl['list_route']:
     x = i.split("_")
