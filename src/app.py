@@ -5,14 +5,14 @@ from importlib import import_module
 
 # Flask
 from flask_cors import CORS
-from flask import app, Flask, Response, g
-from flask_jwt_extended import JWTManager
+from flask import app, Flask, Response, g, send_from_directory, send_file, jsonify
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 
 # Google
 from function.google import secret_key
 
 from function.db import get_db
-from function.loadconfig import config
+from function.loadconfig import config, UPLOAD_FOLDER
 
 # import requests
 # from pip._vendor import cachecontrol
@@ -73,6 +73,23 @@ def teardown_request(exception=None):
 
 
 
+@app.route('/Thumbnail/<filename>')
+def get_image_thumbnail(filename):
+    filepath = os.path.join(UPLOAD_FOLDER, 'Thumbnail', filename)
+    return send_from_directory(os.path.dirname(filepath), os.path.basename(filepath))
+
+@app.route("/image/<filename>", methods=["GET"])
+def get_image(filename):
+    image_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    file_extension = filename.split('.')[-1]
+    
+    # Check if the file extension is in the set of allowed image extensions
+    if file_extension.lower() in image_extensions:
+        return send_file(os.path.join(UPLOAD_FOLDER, 'Thumbnail', filename), mimetype=f"image/{file_extension}")
+    else:
+        return "Invalid image file format", 400  # Return a 400 Bad Request status for invalid image formats
+
+
 
 
 # loop add route to api server
@@ -84,4 +101,4 @@ for i in gbl['list_route']:
 # start api server
 if __name__ == "__main__":
     app.run(debug=bool(config['dev']), host=config['HOST'], port=int(config['PORT']))
-    
+

@@ -1,43 +1,35 @@
-from flask import request, jsonify
-from function.SaveCsvFile import save_csv_file
-from function.SaveThumbnailFile import save_thumbnail_file
-from function.db import get_db
 import mysql.connector
+from flask import request, jsonify
+
+from function.db import get_db
 
 def main():
-    ClassID = request.form.get('ClassID')
-    if not ClassID:
-        return jsonify({"error": "ClassID is required."}), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    Section = request.form.get('Section')
     
     ClassName = request.form.get('ClassName')
-    Section = request.form.get('Section')
+    ClassID = request.form.get('ClassID')
     SchoolYear = request.form.get('SchoolYear')
+    CSYID = request.form.get('CSYID')
     
-    # Handle CSV file
-    success_csv, PathToPicture1 = save_csv_file(ClassID, Section, SchoolYear, request.files.get('file1'))
-
-    # Handle Thumbnail file
-    success_thumbnail, PathToPicture2 = save_thumbnail_file(request.files.get('file2'))
-
-    if not (success_csv and success_thumbnail):
-        return jsonify({"error": "Failed to save one or more files."}), 500
-
+    print('Data:',ClassName, ClassID, SchoolYear, CSYID)
+    """ csvfile = request.files.get['file1']
+    thumbnailfile = request.files.get['file2'] """
+    """ Thumbnail = %s thumbnailfile.filename"""
     try:
-        # Establish MySQL connection
-        conn = get_db()
-        cursor = conn.cursor()
-        
-        update_query = "UPDATE class SET Name = %s, Section = %s, SchoolYear = %s, PathToPicture1 = %s, PathToPicture2 = %s WHERE ClassID = %s"
-        cursor.execute(update_query, (ClassName, Section, SchoolYear, PathToPicture1, PathToPicture2, ClassID))
-
+        update_class = """ 
+            UPDATE class
+            SET ClassName = %s,
+                ClassID = %s,
+                SchoolYear = %s
+            WHERE CSYID = %s
+            """
+        cursor.execute(update_class, (ClassName, ClassID, SchoolYear, CSYID))
         conn.commit()
-        
-        return jsonify({"message": "Class updated successfully!"})
-
+        return jsonify({"message":"class update successfully","Status": True})
     except mysql.connector.Error as error:
         conn.rollback()
-        return jsonify({"error": f"An error occurred while updating class: {error}"}), 500
-
-    finally:
-        if 'cursor' in locals() and cursor:
-            cursor.close()
+        return jsonify({"message":"An error occurred while delete class.","Status": False})

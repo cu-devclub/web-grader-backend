@@ -2,10 +2,10 @@ from flask import request, jsonify, g
 
 def main():
     try:
-
+        
         #Param
         Email = request.args.get('Email')
-
+        
         # Create a cursor
         cur = g.db.cursor()
 
@@ -48,7 +48,7 @@ def main():
                 transformed_data[schoolyear] = [class_info]
             else:
                 transformed_data[schoolyear].append(class_info)
-
+    
         return jsonify(transformed_data)
 
     except Exception as e:
