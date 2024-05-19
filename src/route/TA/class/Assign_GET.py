@@ -15,7 +15,7 @@ def main():
                 ASN.Due,
                 LB.CSYID
             FROM
-                Lab LB 
+                lab LB 
                 INNER JOIN assign ASN ON LB.CSYID = ASN.CSYID AND LB.Lab = ASN.Lab 
                 INNER JOIN section SCT ON SCT.CSYID = LB.CSYID AND SCT.CID = ASN.CID
             WHERE 

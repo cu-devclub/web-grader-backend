@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 
 from function.db import get_db
 from function.isCSV import isCSV
+from function.AddStudent import AddStudent
 from function.loadconfig import UPLOAD_FOLDER
 from function.AddUserClass import AddUserClass
 from function.CreateSection import CreateSection
@@ -15,8 +16,16 @@ def main():
     uploaded_CSV = request.files["file"]
     filename = secure_filename(uploaded_CSV.filename)
     filename = f"{CSYID}{os.path.splitext(uploaded_CSV.filename)[1]}"
-    filepath = os.path.join(UPLOAD_FOLDER,'CSV',filename)
+
+    # check path
+    csvdirec = os.path.join(UPLOAD_FOLDER, 'CSV')
+    if not os.path.exists(csvdirec):
+        os.makedirs(csvdirec)
+
+    filepath = os.path.join(csvdirec, filename)
     
+    
+
     if not isCSV(uploaded_CSV.filename):
         return jsonify({"message": "upload file must be .CSV"}), 500 
 
@@ -32,21 +41,27 @@ def main():
 
             
             #read file and add user
-            with open(filepath, newline='') as csvfile:
+            with open(filepath, newline='', encoding="utf-8") as csvfile:
                 reader = csv.reader(csvfile)
-                next(reader, None)
+                dataTitle = next(reader, None)
+                # get index of data that we want
+                i_Section = dataTitle.index('Section')
+                i_UID = dataTitle.index('ID')
+                i_Name = dataTitle.index('Name (English)')
+
                 maxSection = 1
                 for row in reader:
-                    print(row)
-                    UID, Name, Section = row
+                    Section = row[i_Section]
+                    UID = row[i_UID]
+                    Name = row[i_Name]
+                    # UID, Name, Section = row
                     Email = UID + "@student.chula.ac.th"
                     AddUserGrader(conn, cursor, UID, Email, Name)
-                    print('AUG<<<<<<<<<<<<<<<<<<<<<<<<')
                     CreateSection(conn, cursor, CSYID, Section)
-                    print('CST<<<<<<<<<<<<<<<<<<<<<<<<')
                     AddUserClass(conn, cursor, UID, CSYID, Section)
-                    print('AUC<<<<<<<<<<<<<<<<<<<<<<<<')
-                    if(maxSection < int(Section)):maxSection = int(Section)
+                    AddStudent(conn, cursor, UID, Section, CSYID)
+                    if(maxSection < int(Section)):
+                        maxSection = int(Section)
                 #clear unused section
                 delete_student_class = """DELETE SCT FROM section SCT WHERE SCT.CSYID = %s AND SCT.Section > %s"""
                 cursor.execute(delete_student_class, (CSYID,maxSection))
@@ -61,5 +76,5 @@ def main():
             return jsonify({"message": "An error occurred while updating the file."}), 500
         
     except Exception as e:
-        print("Error saving file: {e}")
+        print(f"Error saving file: {e}")
         return jsonify({"message": "An error occurred while uploading the file."}), 500

@@ -21,7 +21,7 @@ def main():
                 SMT.Timestamp,
                 SMT.Score,
                 QST.MaxScore,
-                SMT.TurnInFile,
+                SMT.SummitedFile,
                 CASE WHEN ASN.Due <= SMT.Timestamp THEN TRUE ELSE FALSE END AS Late
             FROM
                 question QST

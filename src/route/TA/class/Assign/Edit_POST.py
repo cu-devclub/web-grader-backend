@@ -1,6 +1,6 @@
 import pytz
 import json
-import datetime
+from datetime import datetime
 import mysql.connector
 from flask import request, jsonify
 
@@ -89,7 +89,7 @@ def main():
             conn.rollback()
             return jsonify({"error": f"An error occurred: {error}","Status":False}), 500
         conn.commit()
-        return jsonify({"message":"create success","Status":True}), 500
+        return jsonify({"message":"create success","Status":True}), 200
         
     except mysql.connector.Error as error:
         conn.rollback()

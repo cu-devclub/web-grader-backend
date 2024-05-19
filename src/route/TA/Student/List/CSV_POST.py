@@ -1,13 +1,12 @@
 import csv
-import pytz
 import json
+from datetime import datetime
 from io import StringIO
-from flask import request, Response
+from flask import request, jsonify
 
 from function.db import get_db
 from function.GetClassSchoolyear import GetClassSchoolyear
 
-gmt_timezone = pytz.timezone('GMT')
 
 def main():   
     conn = get_db()
@@ -18,18 +17,11 @@ def main():
     CSV_data = data["CSV_data"]
     MaxTotal = data["MaxTotal"]
     CSYID = data["CSYID"]
-
-    print(CSV_data)
-    print(MaxTotal)
-    print(CSYID)
     
     ClassID, SchoolYear = GetClassSchoolyear(conn, cursor, CSYID) 
     
     # Specify the initial fieldnames
     fieldnames = ['UID', 'Name', 'Section', 'Score']
-
-    print('Fieldnames:', fieldnames)
-    print('First row keys:', CSV_data[0].keys())
 
     # Create a temporary in-memory buffer to store the CSV data
     temp_output = StringIO()
@@ -52,10 +44,18 @@ def main():
     output = StringIO(modified_csv_data)
 
     # Set response headers to indicate CSV content
-    headers = {
-        "Content-Disposition": f"attachment; filename={ClassID}-{SchoolYear}.csv",
-        "Content-Type": "text/csv"
-    }
+    # headers = {
+    #     "Content-Disposition": f"attachment; filename={ClassID}-{SchoolYear}-{datetime.now()}.csv",
+    #     "Content-Type": "text/csv"
+    # }
 
     # Return the content of the final output stream as a Flask response
-    return Response(output.getvalue(), headers=headers)
+    # print(output.getvalue())
+    return jsonify({
+        'success': True,
+        'msg': '',
+        'data': {
+            'csv': output.getvalue(),
+            'filename': f"{ClassID}-{SchoolYear}-{datetime.now().strftime('%d_%m_%Y-%H_%M_%S')}.csv"
+        }
+    })

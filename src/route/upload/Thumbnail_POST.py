@@ -15,8 +15,13 @@ def main():
     if uploaded_thumbnail and uploaded_thumbnail.filename != "":
         filename = secure_filename(uploaded_thumbnail.filename)
         filename = f"{CSYID}{os.path.splitext(uploaded_thumbnail.filename)[1]}"
+
+        # check path
+        thndirec = os.path.join(UPLOAD_FOLDER, 'Thumbnail')
+        if not os.path.exists(thndirec):
+            os.makedirs(thndirec)
         
-        filepath = os.path.join(UPLOAD_FOLDER, 'Thumbnail', filename)        
+        filepath = os.path.join(thndirec, filename)        
         try:
             update_thumbnail = """ 
                 UPDATE class

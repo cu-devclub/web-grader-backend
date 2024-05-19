@@ -8,7 +8,7 @@ def main():
         BIG.UID,
         BIG.Name,
         BIG.Section,
-        SUM(Big.Score) AS TotalScore
+        SUM(BIG.Score) AS TotalScore
     FROM
     (
     SELECT 
@@ -51,7 +51,7 @@ def main():
         SELECT
             SUM(QST.MaxScore) as TotalMax 
         FROM
-            Question QST
+            question QST
         WHERE
             QST.CSYID = %s
         GROUP BY

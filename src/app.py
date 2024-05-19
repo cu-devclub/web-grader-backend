@@ -1,5 +1,6 @@
 # SYS
 import os
+from tabulate import tabulate
 from colorama import Fore, Style
 from importlib import import_module
 
@@ -24,8 +25,7 @@ from function.loadconfig import config, UPLOAD_FOLDER
 def tree_route(startpath):
     ListRoute = []
     for root, dirs, files in os.walk(startpath):
-        level = root.replace(startpath, '').count(os.sep)
-        if level == 2 and len(files) != 0:
+        if (not "__pycache__" in root) and len(files) != 0:
             for f in files:
                 if f.endswith(".py"):
                     ListRoute.append(root.replace('\\', '.').replace('/', '.') + '.' + f.replace('.py', '')) # Windows using \ in file part but linux use / so that why it have to replace both / and \ to .
@@ -48,6 +48,8 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" # to allow Http traffic for loca
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True
 app.config['JWT_SECRET_KEY'] = config['JWT_SECRET_KEY']
+app.config['JWT_COOKIE_SAMESITE'] = "None"
+app.config['JWT_COOKIE_SECURE'] = True
 
 jwt = JWTManager(app)
 
@@ -90,13 +92,16 @@ def get_image(filename):
         return "Invalid image file format", 400  # Return a 400 Bad Request status for invalid image formats
 
 
-
+mount_info = []
 
 # loop add route to api server
 for i in gbl['list_route']:
     x = i.split("_")
     app.add_url_rule('/'+x[0].replace('route.', '').replace('.', '/'), i, gbl[i].main, methods=x[1].split("-"))
-    print(Fore.GREEN + x[0] + "method " + Fore.CYAN + x[1] + Fore.YELLOW + " has been mounted to server as " + Fore.GREEN + x[0].replace('route.', '').replace('.', '/')+ Style.RESET_ALL)
+    mount_info.append([Fore.GREEN + x[0], Fore.CYAN + x[1], Fore.YELLOW + x[0].replace('route.', '').replace('.', '/') + Style.RESET_ALL])
+    # print(Fore.GREEN + x[0] + " method " + Fore.CYAN + x[1] + Fore.YELLOW + " mounted to " + Fore.GREEN + x[0].replace('route.', '').replace('.', '/') + Style.RESET_ALL)
+
+print(tabulate(mount_info, headers=['Route', 'Method', "Path"]))
 
 # start api server
 if __name__ == "__main__":

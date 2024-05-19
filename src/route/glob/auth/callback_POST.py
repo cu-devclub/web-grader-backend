@@ -1,12 +1,12 @@
 import datetime
 import requests
 import mysql.connector
-from flask import jsonify, request
+from flask import jsonify, request, Response
 
 from google.oauth2 import id_token
 from pip._vendor import cachecontrol
 import google.auth.transport.requests
-from flask_jwt_extended import create_access_token, set_access_cookies, create_refresh_token
+from flask_jwt_extended import create_access_token, set_access_cookies, get_csrf_token
 
 from function.db import get_db
 from function.google import flow, GOOGLE_CLIENT_ID
@@ -34,10 +34,17 @@ def main():
     )
 
     email = id_info.get("email")
-    UID = email.split("@")[0]
+    emailsplit = email.split("@")
+    if(not emailsplit[1] in ["chula.ac.th", "student.chula.ac.th"]):
+        return jsonify({
+            'success': False,
+            'msg': 'Only chula email allow',
+            'data': {}
+        }), 200
+    UID = emailsplit[0]
     name = id_info.get("name")
     # profile = id_info.get("picture")
-    role = 1 if ("student" in email.split("@")[1]) else 2
+    role = 1 if ("student" in emailsplit[1]) else 2
 
     USR_data = (email, UID, name, role)
 
@@ -52,7 +59,7 @@ def main():
         conn.rollback()
         return jsonify({
             'success': False,
-            'msg': '',
+            'msg': 'Database error.\nPlease contact admin.',
             'data': {}
         }), 200
 
@@ -67,14 +74,28 @@ def main():
 
     expires_access = datetime.timedelta(days=30)
 
-    access_token = create_access_token(identity=email, expires_delta=expires_access)
+
+    ac_token_data = {
+        "email": email,
+        "uid": UID,
+        "role": role
+    }
+
+    access_token = create_access_token(identity=ac_token_data, expires_delta=expires_access)
+    # resp = Response(jsonify({
+    #     'success': True,
+    #     'msg': '',
+    #     'data': ac_token_data
+    # }))
+    ac_token_data['csrf_token'] = get_csrf_token(access_token)
     resp = jsonify({
         'success': True,
         'msg': '',
-        'data': {
-            "Email": email
-        }
+        'data': ac_token_data
     })
+    # resp.headers.add('Set-Cookie', 'access_token_cookie=' + access_token + '; SameSite=None; Secure')
     set_access_cookies(resp, access_token)
+
+    # resp.headers['Access-Control-Allow-Origin'] = '*'
 
     return resp, 200

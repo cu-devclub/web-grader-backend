@@ -26,7 +26,14 @@ def main():
     if uploaded_file.filename != "":
         filename = secure_filename(uploaded_file.filename)        
         filename = f"{UID}-L{Lab}Q{Question}-{CSYID}{os.path.splitext(uploaded_file.filename)[1]}"
-        filepath = os.path.join(UPLOAD_FOLDER,'TurnIn',filename)
+
+        # check path
+        smtdirec = os.path.join(UPLOAD_FOLDER, 'TurnIn')
+        if not os.path.exists(smtdirec):
+            os.makedirs(smtdirec)
+
+
+        filepath = os.path.join(smtdirec, filename)
 
         try:
             uploaded_file.save(filepath)

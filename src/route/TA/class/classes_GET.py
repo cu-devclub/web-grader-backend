@@ -1,5 +1,7 @@
 from flask import request, jsonify, g
+from flask_jwt_extended import jwt_required
 
+# @jwt_required()
 def main():
     try:
         
@@ -23,7 +25,7 @@ def main():
                 CET.Email = %s
             ORDER BY
                 SchoolYear DESC;
-                 """
+        """
 
         # Execute a SELECT statement
         cur.execute(query, (Email))
