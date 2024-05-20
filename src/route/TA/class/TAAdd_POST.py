@@ -8,7 +8,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_req
 def main():
     conn = get_db()
     cursor = conn.cursor()
-    verify_jwt_in_request()
+    # verify_jwt_in_request()
 
     # adder = get_jwt_identity()
     adder = {}
