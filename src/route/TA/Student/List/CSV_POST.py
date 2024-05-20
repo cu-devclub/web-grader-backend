@@ -21,7 +21,7 @@ def main():
     ClassID, SchoolYear = GetClassSchoolyear(conn, cursor, CSYID) 
     
     # Specify the initial fieldnames
-    fieldnames = ['UID', 'Name', 'Section', 'Score']
+    fieldnames = ['ID', 'Name (English)', 'Section', 'Score']
 
     # Create a temporary in-memory buffer to store the CSV data
     temp_output = StringIO()

@@ -67,14 +67,26 @@ def main():
                 cursor.execute(delete_student_class, (CSYID,maxSection))
             
             conn.commit()
-            return jsonify({"message": "File uploaded successfully!"})
+            return jsonify({
+                'success': True,
+                "message": "File uploaded successfully!"
+            })
         except FileNotFoundError:
             print(f"File {filepath} not found.")
-            return jsonify({"message": "An error occurred while updating the file."}), 500
+            return jsonify({
+                'success': False,
+                "message": "An error occurred while updating the file."
+            })
         except Exception as e:
             print("An error occurred:", e)
-            return jsonify({"message": "An error occurred while updating the file."}), 500
+            return jsonify({
+                'success': False,
+                "message": "An error occurred while updating the file."
+            })
         
     except Exception as e:
         print(f"Error saving file: {e}")
-        return jsonify({"message": "An error occurred while uploading the file."}), 500
+        return jsonify({
+            'success': False,
+            "message": "An error occurred while uploading the file."
+        })
