@@ -16,7 +16,7 @@ def main():
     # adder = get_jwt_identity()
     adder = {}
     Data = request.get_json()
-    adder["Email"] = Data.get("AEmail")
+    adder["email"] = Data.get("AEmail")
 
     # check mail
     if(not fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', Data.get("Email"))):
