@@ -28,7 +28,7 @@ def main():
     transformed_data = []
 
     for row in ListResult:
-        transformed_data.append({'UID': row[0], 'Name': row[1], 'Section': row[2], "Score": row[3]})
+        transformed_data.append({'ID': row[0], 'Name (English)': row[1], 'Section': row[2], "Score": row[3]})
 
     MaxScore_query = """ 
         SELECT
