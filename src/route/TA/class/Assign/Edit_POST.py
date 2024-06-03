@@ -106,6 +106,7 @@ def main():
         seleted = [GetGID(conn, cursor, i, form["CSYID"]) if form["IsGroup"] else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
 
         # addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {"GID" if form["IsGroup"] else "CID"}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
+        GCID = "GID" if form["IsGroup"] else "CID"
         setLab = """
             UPDATE 
                 lab
@@ -114,7 +115,7 @@ def main():
                 Name = %s,
                 Publish = %s,
                 Due = %s,
-                """ + f"{"GID" if form["IsGroup"] else "CID"}" + """ = %s
+                """ + GCID + """ = %s
             WHERE 
                 LID = %s;
         """
