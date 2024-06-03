@@ -21,7 +21,7 @@ def main():
     ClassID, SchoolYear = GetClassSchoolyear(conn, cursor, CSYID) 
     
     # Specify the initial fieldnames
-    fieldnames = ['ID', 'Name (English)', 'Section', 'Score']
+    fieldnames = ['ID', 'Name (English)', 'Section', 'Group', 'Score']
 
     # Create a temporary in-memory buffer to store the CSV data
     temp_output = StringIO()
@@ -56,6 +56,6 @@ def main():
         'msg': '',
         'data': {
             'csv': output.getvalue(),
-            'filename': f"{ClassID}-{SchoolYear}-{datetime.now().strftime('%d_%m_%Y-%H_%M_%S')}.csv"
+            'filename': f"{ClassID}_{SchoolYear}_{datetime.now().strftime('%d-%m-%YT%H-%M-%S')}.csv"
         }
     })

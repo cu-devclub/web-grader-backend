@@ -1,10 +1,10 @@
-def GetCID(dbSec,cursor,section,CSYID):
+def GetCID(db,cursor,section,CSYID):
     try:
         query = """SELECT CID FROM section SCT WHERE SCT.Section = %s AND SCT.CSYID = %s """
         cursor.execute(query,(section,CSYID))
         # Fetch all rows
-        dbSec = cursor.fetchone()
-        return dbSec[0]
+        db = cursor.fetchone()
+        return db[0]
     except Exception as e:
-        dbSec.rollback()
+        db.rollback()
         return False

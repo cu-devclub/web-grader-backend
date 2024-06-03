@@ -6,7 +6,7 @@ def main():
     cursor = conn.cursor()
     
     CSYID = request.args.get("CSYID")
-    section_query = """SELECT SCT.Section FROM section SCT WHERE SCT.CSYID = %s"""
+    section_query = """SELECT GRP.Group FROM `group` GRP WHERE GRP.CSYID = %s"""
     cursor.execute(section_query, (CSYID,))
     data = cursor.fetchall()
     

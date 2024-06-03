@@ -1,10 +1,10 @@
-def CreateSection(dbCST, cursor, CSYID, Section):
+def CreateSection(db, cursor, CSYID, Section):
     try:
-        insert_section = "INSERT INTO section (CSYID, Section) VALUES (%s, %s)"
+        insert_section = "INSERT IGNORE INTO section (CSYID, Section) VALUES (%s, %s)"
         cursor.execute(insert_section, (CSYID, Section))
-        dbCST.commit()
+        db.commit()
         return True
     except Exception as e:
-        dbCST.rollback()
-        print(e)
+        print("An error occurred:", e)  
+        db.rollback()
         return False

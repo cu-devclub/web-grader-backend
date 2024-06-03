@@ -4,6 +4,7 @@
 .txt
 .venv/
 old
+src/files/
 *.swp
 __pycache__
 test.py

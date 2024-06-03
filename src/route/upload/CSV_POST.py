@@ -9,6 +9,7 @@ from function.AddStudent import AddStudent
 from function.loadconfig import UPLOAD_FOLDER
 from function.AddUserClass import AddUserClass
 from function.CreateSection import CreateSection
+from function.CreateGroup import CreateGroup
 from function.AddUserGrader import AddUserGrader
 
 def main():
@@ -36,8 +37,24 @@ def main():
             cursor = conn.cursor()
             
             #clear student in class
-            delete_student_class = """DELETE STD FROM student STD INNER JOIN section SCT ON STD.CID = SCT.CID WHERE SCT.CSYID = %s"""
-            cursor.execute(delete_student_class, (CSYID,))
+            clear1_class = """
+            DELETE 
+                STD 
+            FROM 
+                student STD
+            WHERE 
+                STD.CSYID = %s;
+            """
+            clear2_class = """
+            DELETE 
+                GRP
+            FROM 
+                `group` GRP
+            WHERE 
+                GRP.CSYID = %s;
+            """
+            cursor.execute(clear1_class, (CSYID))
+            cursor.execute(clear2_class, (CSYID))
 
             
             #read file and add user
@@ -48,23 +65,30 @@ def main():
                 i_Section = dataTitle.index('Section')
                 i_UID = dataTitle.index('ID')
                 i_Name = dataTitle.index('Name (English)')
+                i_Group = dataTitle.index('Group') if 'Group' in dataTitle else None
 
                 maxSection = 1
                 for row in reader:
                     Section = row[i_Section]
                     UID = row[i_UID]
                     Name = row[i_Name]
+                    Group = row[i_Group] if i_Group != None else None
+                    Group = Group if Group != '' and Group != '-' else None
                     # UID, Name, Section = row
                     Email = UID + "@student.chula.ac.th"
-                    AddUserGrader(conn, cursor, UID, Email, Name)
+                    if Group != None:
+                        CreateGroup(conn, cursor, CSYID, Group)
                     CreateSection(conn, cursor, CSYID, Section)
-                    AddUserClass(conn, cursor, UID, CSYID, Section)
-                    AddStudent(conn, cursor, UID, Section, CSYID)
+
+                    AddUserGrader(conn, cursor, UID, Email, Name)
+                    AddUserClass(conn, cursor, UID, CSYID, Section, Group)
+
+                    # AddStudent(conn, cursor, UID, Section, CSYID)
                     if(maxSection < int(Section)):
                         maxSection = int(Section)
                 #clear unused section
                 delete_student_class = """DELETE SCT FROM section SCT WHERE SCT.CSYID = %s AND SCT.Section > %s"""
-                cursor.execute(delete_student_class, (CSYID,maxSection))
+                cursor.execute(delete_student_class, (CSYID, maxSection))
             
             conn.commit()
             return jsonify({
