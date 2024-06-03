@@ -29,7 +29,9 @@ def main():
         
         seleted = [GetGID(conn, cursor, i, form["CSYID"]) if form["IsGroup"] else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
 
-        addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {"GID" if form["IsGroup"] else "CID"}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
+        GCID = "GID" if form["IsGroup"] else "CID"
+
+        addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {GCID}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
         cursor.execute(addLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], str(seleted).replace(" ", ""), form["CSYID"], form["Creator"]))
         conn.commit()
 
