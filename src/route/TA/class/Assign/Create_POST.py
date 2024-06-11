@@ -27,9 +27,9 @@ def main():
         # Path = <CSYID>/<LID>/Source_(index)_(Source)
         # Path = <CSYID>/<LID>/Release_(index)_(Release)
         
-        seleted = [GetGID(conn, cursor, i, form["CSYID"]) if form["IsGroup"] else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
+        seleted = [GetGID(conn, cursor, i, form["CSYID"]) if (form["IsGroup"] == 'true') else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
 
-        GCID = "GID" if form["IsGroup"] else "CID"
+        GCID = "GID" if (form["IsGroup"] == 'true') else "CID"
 
         addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {GCID}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
         cursor.execute(addLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], str(seleted).replace(" ", ""), form["CSYID"], form["Creator"]))
