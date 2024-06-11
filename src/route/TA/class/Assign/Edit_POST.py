@@ -103,10 +103,10 @@ def main():
         # Path = <CSYID>/<LID>/Source_(index)_(Source)
         # Path = <CSYID>/<LID>/Release_(index)_(Release)
         
-        seleted = [GetGID(conn, cursor, i, form["CSYID"]) if form["IsGroup"] else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
+        seleted = [GetGID(conn, cursor, i, form["CSYID"]) if (form["IsGroup"] == 'true') else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
 
-        # addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {"GID" if form["IsGroup"] else "CID"}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
-        GCID = "GID" if form["IsGroup"] else "CID"
+        # addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {"GID" if (form["IsGroup"] == 'true') else "CID"}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
+        GCID = "GID" if (form["IsGroup"] == 'true') else "CID"
         setLab = """
             UPDATE 
                 lab
