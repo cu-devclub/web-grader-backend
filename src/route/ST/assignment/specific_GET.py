@@ -4,108 +4,110 @@ def main():
     try:
         
         #Param
-        Uid = request.args.get('UID')
-        Csyid = request.args.get('CSYID')
-        Lab = request.args.get('speclab')
+        LID = request.args.get('LID')
+        Email = request.args.get('Email') # change this to jwt later
 
         # Create a cursor
         cur = g.db.cursor()
 
+        # Check access
         query = """
-            SELECT
-                QST.Lab,
-                LB.Name,
-                QST.QID,
-                QST.Question,
-                ASN.Due,
-                SMT.Timestamp,
-                SMT.Score,
-                QST.MaxScore,
-                SMT.SummitedFile,
-                CASE WHEN ASN.Due <= SMT.Timestamp THEN TRUE ELSE FALSE END AS Late
-            FROM
-                question QST
-                INNER JOIN lab LB ON QST.CSYID = LB.CSYID AND QST.Lab = LB.lab
-                INNER JOIN section SCT ON SCT.CSYID = QST.CSYID
-                INNER JOIN assign ASN ON SCT.CID = ASN.CID AND QST.Lab = ASN.Lab
-                INNER JOIN student STD ON STD.UID = %s AND STD.CID = ASN.CID
-                LEFT JOIN submitted SMT ON QST.CSYID = SMT.CSYID AND QST.Lab = SMT.Lab AND QST.Question = SMT.Question AND SMT.UID = STD.UID
-            WHERE
-                QST.CSYID = %s
-                AND QST.Lab = %s
-                    """
-
-        # Execute a SELECT statement
-        cur.execute(query,(Uid,Csyid,Lab))
+            SELECT 
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM user u
+                        JOIN student s ON u.UID = s.UID
+                        JOIN lab l ON s.CSYID = l.CSYID
+                        WHERE u.Email = %s AND l.LID = %s
+                        AND (
+                            JSON_CONTAINS(l.CID, CAST(s.CID AS JSON), '$')
+                            OR JSON_CONTAINS(l.GID, CAST(s.GID AS JSON), '$')
+                        )
+                    ) 
+                    THEN 1 
+                    ELSE 0 
+                END AS access;
+        """
+        cur.execute(query,(Email, LID))
         # Fetch all rows
         data = cur.fetchall()
 
-        # Close the cursor
+        if(not bool(int(data[0][0]))):
+            return jsonify({
+                'success': False,
+                'msg': "You don't have permission to this lab",
+                'data': {}
+            }), 200
         
+        cur.execute("""
+            SELECT 
+                l.Lab, l.Name, l.Publish, l.Due,
+                CASE 
+                    WHEN l.Due <= IFNULL(s.LatestTimestamp, CONVERT_TZ(NOW(), '+00:00', '+07:00')) THEN 1
+                    ELSE 0
+                END AS Late
+            FROM lab l
+            LEFT JOIN (
+                SELECT LID, MAX(Timestamp) AS LatestTimestamp
+                FROM submitted
+                GROUP BY LID
+            ) s ON l.LID = s.LID
+            WHERE l.LID = %s
+        """, (LID,))
+        lab_info_row = cur.fetchone()
+        lab_info = {
+            "Lab": lab_info_row[0],
+            "Name": lab_info_row[1],
+            "Publish": lab_info_row[2],
+            "Due": lab_info_row[3],
+            "Late": bool(int(lab_info_row[4]))
+        }
 
-        # Convert the result to the desired structure
-        transformed_data_list = []
-        
-        for row in data:
-            lab, lab_name, question_id, question, due_time, submission_time, score, max_score, turn_in_file, Late = row
-            lab_num = 'Lab' + str(lab)
+        # Query questions and submitted information
+        cur.execute("""
+            SELECT q.QID, COALESCE(s.SID, 0) AS SID, COALESCE(s.Score, 0) AS Score, q.MaxScore
+            FROM question q
+            LEFT JOIN submitted s ON q.QID = s.QID AND q.LID = s.LID
+            WHERE q.LID = %s
+            ORDER BY q.QID
+        """, (LID,))
+        questions = cur.fetchall()
+        questions_list = [
+            {
+                "QID": q[0],
+                "SMT": q[1],
+                "Score": q[2],
+                "Max": q[3]
+            } for q in questions
+        ]
 
-            # Construct the question key
-            question_key = 'Q' + str(question)
+        # Query addfile information
+        cur.execute("""
+            SELECT ID
+            FROM addfile
+            WHERE LID = %s
+        """, (LID,))
+        add_files = cur.fetchall()
+        add_files_list = [af[0] for af in add_files]
 
-            # Check if lab_num already exists in transformed_data_list
-            lab_exists = False
-            for item in transformed_data_list:
-                if item['Lab'] == lab_num:
-                    lab_exists = True
-                    lab_data = item
-                    break
+        # Format the JSON response
+        result = {
+            "Info": lab_info,
+            "Question": questions_list,
+            "AddFile": add_files_list
+        }
 
-            # If lab_num doesn't exist, create it
-            if not lab_exists:
-                lab_data = {
-                    'Lab': lab_num,
-                    'Name': lab_name,
-                    'Due': due_time,
-                    'Files': [],
-                    'Questions': {}
-                }
-                transformed_data_list.append(lab_data)
-
-            # Initialize the question key if it doesn't exist
-            if question_key not in lab_data['Questions']:
-                lab_data['Questions'][question_key] = {
-                    'ID': question_id,
-                    'QuestionNum': question,
-                    'Submission': {
-                        'Date': submission_time,
-                        'FileName': turn_in_file,
-                    },
-                    'Score': score,
-                    'MaxScore': max_score,
-                    'Late': bool(Late)
-                }
-
-            # Fetch files for the current lab and add them to the lab's 'Files' list
-            query_files = """
-                SELECT
-                    PathToFile
-                FROM
-                    addfile ADF
-                WHERE
-                    ADF.CSYID = %s
-                    AND ADF.Lab = %s
-            """
-            cur.execute(query_files, (Csyid, lab))
-            files_data = cur.fetchall()
-            for file_row in files_data:
-                file_path = file_row[0]
-                if file_path not in lab_data['Files']:
-                    lab_data['Files'].append(file_path)
-
-        # jsonify the transformed data list
-        return jsonify(transformed_data_list[0])
+        return jsonify({
+            'success': True,
+            'msg': "",
+            'data': result
+        }), 200
 
     except Exception as e:
         print(e)
-        return jsonify({'error': 'An error occurred'}), 500
+        return jsonify({
+            'success': False,
+            'msg': "Please contact admin!",
+            'data': {}
+        }), 200

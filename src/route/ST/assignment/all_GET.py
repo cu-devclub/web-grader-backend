@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import request, jsonify, g
 
 def main():
@@ -20,13 +21,13 @@ def main():
             COALESCE(SMT.Score, 0) AS Score,
             COALESCE(QST.MaxScore, 0) AS MaxScore,
             CASE 
-                WHEN LAB.Due <= SMT.LatestTimestamp THEN TRUE
-                ELSE FALSE
-            END AS Late,
-            CASE 
                 WHEN SMT.LatestTimestamp IS NOT NULL THEN TRUE
                 ELSE FALSE
-            END AS TurnIn
+            END AS TurnIn,
+            CASE 
+                WHEN LAB.Due <= IFNULL(SMT.LatestTimestamp, CONVERT_TZ(NOW(), '+00:00', '+07:00')) THEN TRUE
+                ELSE FALSE
+            END AS Late
         FROM 
             lab AS LAB
         JOIN 
@@ -83,8 +84,8 @@ def main():
                 "LID": row[0], 
                 "Lab": row[1], 
                 "Name": row[2], 
-                "Publish": row[3], 
-                "Due": row[4],
+                "Publish": datetime.strptime(str(row[3]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"), 
+                "Due": datetime.strptime(str(row[4]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
                 "Score": int(row[5]),
                 "MaxScore": int(row[6]),
                 "TurnIn": bool(row[7]),

@@ -1,4 +1,5 @@
 import mysql.connector
+from datetime import datetime
 from flask import request, jsonify,g
 
 def main():
@@ -31,8 +32,8 @@ def main():
                 "LID": i[0],
                 "Lab": i[1],
                 "Name": i[2],
-                "Publish": i[3],
-                "Due": i[4],
+                "Publish": datetime.strptime(str(i[3]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
+                "Due": datetime.strptime(str(i[4]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
             })
 
         return jsonify({
