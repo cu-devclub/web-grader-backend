@@ -14,7 +14,7 @@ def main():
     # 0_<perm>_<ID>        <Additional file>
     # 1_<perm>_<QID>       <Question release>
     # 1_<perm>_<QID>       <Question source>
-    # 2_<perm>_<SID>       <Submition>
+    # 2_<perm>_<SID>       <Submission>
     # 3_<perm>_<csyid>     <Thumbnail>
     # 
     # <perm>
@@ -41,12 +41,10 @@ def main():
             'data': ""
         }), 200
 
-
-
     addPath = ""
 
     if FRL[0] == 0:
-        if(not checkPermAddDown(FRL[2], Email, cur)):
+        if not checkPermAddDown(FRL[2], Email, cur):
             return jsonify({
                 'success': False,
                 'msg': 'You do not have access to this file.',
@@ -55,7 +53,7 @@ def main():
         query = "SELECT Path FROM addfile WHERE ID = %s"
     elif FRL[0] == 1:
         if FRL[1] == 0:
-            if(not checkPermQDown(FRL[2], Email, 0, cur)):
+            if not checkPermQDown(FRL[2], Email, 0, cur):
                 return jsonify({
                     'success': False,
                     'msg': 'You do not have access to this file.',
@@ -63,7 +61,7 @@ def main():
                 }), 200
             query = "SELECT ReleasePath, LID FROM question WHERE QID = %s"
         elif FRL[1] == 1:
-            if(not checkPermQDown(FRL[2], Email, 1, cur)):
+            if not checkPermQDown(FRL[2], Email, 1, cur):
                 return jsonify({
                     'success': False,
                     'msg': 'You do not have access to this file.',
@@ -72,12 +70,12 @@ def main():
             query = "SELECT SourcePath, LID FROM question WHERE QID = %s"
         else:
             return jsonify({
-            'success': False,
-            'msg': 'fileRequest is not valid',
-            'data': ""
-        }), 200
+                'success': False,
+                'msg': 'fileRequest is not valid',
+                'data': ""
+            }), 200
     elif FRL[0] == 2:
-        if(not checkPermSubmitDown(FRL[2], Email, cur)):
+        if not checkPermSubmitDown(FRL[2], Email, cur):
             return jsonify({
                 'success': False,
                 'msg': 'You do not have access to this file.',
@@ -95,7 +93,7 @@ def main():
         }), 200
 
     # Execute a SELECT statement
-    cur.execute(query, FRL[2])
+    cur.execute(query, (FRL[2],))
     # Fetch all rows
     data = cur.fetchall()
 
@@ -104,9 +102,9 @@ def main():
 
     file_path = addPath + data[0][0]
     filename = data[0][0]
-    if(FRL[0] == 1):
+    if FRL[0] == 1:
         prefilename = data[0][0].split("\\")[-1].split("_")
-        filename = f"{Email.split("@")[0]}-L{data[0][1]}-Q{int(prefilename[1])+1}-{prefilename[2]}"
+        filename = f'{Email.split("@")[0]}-L{data[0][1]}-Q{int(prefilename[1]) + 1}-{prefilename[2]}'
 
     file_content = ""
     # Read the file content
