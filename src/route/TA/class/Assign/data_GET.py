@@ -1,7 +1,7 @@
-from datetime import datetime
-
 from function.db import get_db
 from flask import request, jsonify
+
+from function.isLock import isLock
 
 def main():
     conn = get_db()
@@ -9,8 +9,8 @@ def main():
     
     LID = request.args.get("LID")
 
-
     try:
+        # Retrieve lab details
         query = """ 
             SELECT
                 LB.Lab,
@@ -19,18 +19,21 @@ def main():
                 LB.Due,
                 LB.CID,
                 LB.GID,
-                LB.CSYID
+                LB.CSYID,
+                CASE
+                    WHEN LB.Due = LB.Lock THEN 1
+                    ELSE 0
+                END AS LOD
             FROM
                 lab LB
             WHERE 
                 LB.LID = %s
             """
-        cursor.execute(query, (LID))
+        cursor.execute(query, (LID,))
+        data = cursor.fetchone()
 
-        data = cursor.fetchall()[0]
-
-        isGroup = data[4] == None
-
+        isGroup = data[4] is None
+        newD5 = data[5] if isGroup else data[4]
         CSYID = data[6]
 
         if isGroup:
@@ -53,26 +56,40 @@ def main():
                 SCT.CSYID = %s
             """
 
-        cursor.execute(query, (CSYID))
+        cursor.execute(query, (CSYID,))
         data2 = cursor.fetchall()
 
         PreSelectList = {}
         for i in data2:
             PreSelectList[i[0]] = i[1]
 
+        # Retrieve question details
         query = """
             SELECT
+                QST.QID,
                 QST.MaxScore
             FROM 
                 question QST 
             WHERE 
                 QST.LID = %s
             ORDER BY 
-                QST.QID DESC;
+                QST.QID ASC;
             """
         
-        cursor.execute(query, (LID))
-        data2 = cursor.fetchall()
+        cursor.execute(query, (LID,))
+        questions = cursor.fetchall()
+        
+        # Retrieve addfile details
+        query = """
+            SELECT
+                AF.ID
+            FROM
+                addfile AF
+            WHERE
+                AF.LID = %s
+            """
+        cursor.execute(query, (LID,))
+        addfiles = cursor.fetchall()
         
         return jsonify({
             'success': True,
@@ -82,10 +99,14 @@ def main():
                 'LabName': data[1],
                 "PubDate": data[2].strftime("%Y-%m-%dT%H:%M:%S"),
                 "DueDate": data[3].strftime("%Y-%m-%dT%H:%M:%S"),
+                "LOD": bool(data[7]),
+                "Lock": isLock(conn, cursor, LID),
                 "IsGroup": isGroup,
-                "Selected": [PreSelectList[int(i)] for i in [i.strip() for i in data[5].strip("[").strip("]").split(",")]],
+                "Selected": [PreSelectList[int(i)] for i in [i for i in newD5.strip("[] ").split(",")]],
+                # "Selected": [],
                 "SelectList": list(PreSelectList.values()),
-                "Question": [{"id": i+1, "score": int(data2[i][0])} for i in range(len(data2))]
+                "Question": [{"id": i+1, "QID": questions[i][0], "score": int(questions[i][1])} for i in range(len(questions))],
+                "addfile": [file[0] for file in addfiles]
             }
         }), 200
     
@@ -95,84 +116,6 @@ def main():
         return jsonify({
             'success': False,
             'msg': 'Please contact admin',
-            'data': e
-        }), 200
+            'data': str(e)
+        }), 500
 
-
-
-    
-    # transformdata = {}
-    
-    # # Query for question datetime
-    # question_datetime_query = """
-    # SELECT
-    #     SCT.Section,
-    #     ASN.Publish,
-    #     ASN.Due
-    # FROM
-    #     section SCT
-    #     INNER JOIN assign ASN ON SCT.CID = ASN.CID
-    # WHERE 
-    #     SCT.CSYID = %s
-    # """
-    # cursor.execute(question_datetime_query, (CSYID, LabNumber))
-    # datetime_data = cursor.fetchall()
-    
-    # transformdata['LabTime'] = {}
-    # for row in datetime_data:
-    #     section = row[0]
-    #     publish = row[1]
-    #     due = row[2]
-    #     formatted_publish = publish.strftime("%Y-%m-%dT%H:%M")
-    #     formatted_due = due.strftime("%Y-%m-%dT%H:%M")
-
-    #     transformdata['LabTime'][section] = {'publishDate': formatted_publish, 'dueDate': formatted_due}
-    
-    # # Query for question and max score
-    # question_questionsscore_query = """
-    # SELECT
-    #     QST.Question,
-    #     QST.MaxScore
-    # FROM
-    #     question QST
-    # WHERE 
-    #     QST.CSYID = %s
-    #     AND QST.Lab = %s
-    # """
-    # cursor.execute(question_questionsscore_query, (CSYID, LabNumber))
-    # question_data = cursor.fetchall()
-    
-    # transformdata['Question'] = [{"id": q[0], "score": q[1]} for q in question_data]
-    
-    # # Query for additional files
-    # question_addfile_query = """
-    # SELECT
-    #     ADF.PathToFile
-    # FROM
-    #     addfile ADF
-    # WHERE
-    #     ADF.CSYID = %s
-    #     AND ADF.Lab = %s
-    # """
-    # cursor.execute(question_addfile_query, (CSYID, LabNumber))
-    # file_data = cursor.fetchall()
-    
-    # transformdata['file'] = [f[0] for f in file_data]
-    
-    # # Query for Section
-    # question_section_query = """
-    # SELECT
-    #     Section
-    # FROM
-    #     assign ASN
-    #     INNER JOIN section SCT ON SCT.CID = ASN.CID
-    # WHERE
-    #     ASN.CSYID = %s
-    #     AND ASN.Lab = %s
-    # """
-    # cursor.execute(question_section_query, (CSYID, LabNumber))
-    # section = cursor.fetchall()
-
-    # transformdata['section'] = [f[0] for f in section]
-    
-    # return jsonify(transformdata)

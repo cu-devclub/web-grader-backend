@@ -1,11 +1,14 @@
+from datetime import datetime
 from flask import request, jsonify, g
+
+from function.isLock import isLock
 
 def main():
     try:
         
-        #Param
+        # Params
         LID = request.args.get('LID')
-        Email = request.args.get('Email') # change this to jwt later
+        Email = request.args.get('Email')  # change this to jwt later
 
         # Create a cursor
         cur = g.db.cursor()
@@ -29,17 +32,18 @@ def main():
                     ELSE 0 
                 END AS access;
         """
-        cur.execute(query,(Email, LID))
-        # Fetch all rows
-        data = cur.fetchall()
+        cur.execute(query, (Email, LID))
+        # Fetch access result
+        data = cur.fetchone()
 
-        if(not bool(int(data[0][0]))):
+        if not bool(int(data[0])):
             return jsonify({
                 'success': False,
                 'msg': "You don't have permission to this lab",
                 'data': {}
             }), 200
         
+        # Fetch lab info
         cur.execute("""
             SELECT 
                 l.Lab, l.Name, l.Publish, l.Due,
@@ -57,32 +61,45 @@ def main():
         """, (LID,))
         lab_info_row = cur.fetchone()
         lab_info = {
+            "Lock": isLock(g.db, cur, LID),
             "Lab": lab_info_row[0],
             "Name": lab_info_row[1],
-            "Publish": lab_info_row[2],
-            "Due": lab_info_row[3],
+            "Publish": datetime.strptime(str(lab_info_row[2]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
+            "Due": datetime.strptime(str(lab_info_row[3]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
             "Late": bool(int(lab_info_row[4]))
         }
 
-        # Query questions and submitted information
+        # Fetch questions and submission information
         cur.execute("""
-            SELECT q.QID, COALESCE(s.SID, 0) AS SID, COALESCE(s.Score, 0) AS Score, q.MaxScore
+            SELECT q.QID, COALESCE(s.SID, -1) AS SID, COALESCE(s.Score, 0) AS Score, q.MaxScore,
+                   COALESCE(s.SummitedFile, '') AS Filename, COALESCE(s.Timestamp, '') AS Timestamp
             FROM question q
             LEFT JOIN submitted s ON q.QID = s.QID AND q.LID = s.LID
             WHERE q.LID = %s
             ORDER BY q.QID
         """, (LID,))
         questions = cur.fetchall()
-        questions_list = [
-            {
-                "QID": q[0],
-                "SMT": q[1],
-                "Score": q[2],
-                "Max": q[3]
-            } for q in questions
-        ]
 
-        # Query addfile information
+        questions_list = []
+        for q in questions:
+            filename = q[4].split('/')[-1] if q[4] else ""
+            timestamp = datetime.strptime(str(q[5]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M") if q[5] else ""
+            late = 1 if timestamp and datetime.strptime(timestamp, "%d/%m/%Y %H:%M") > datetime.strptime(lab_info["Due"], "%d/%m/%Y %H:%M") else 0
+            if not timestamp:
+                late = -1
+            questions_list.append({
+                "QID": q[0],
+                "SMT": {
+                    "SID": q[1],
+                    "Filename": filename.split("\\")[-1],
+                    "Date": timestamp,
+                    "Late": late
+                },
+                "Score": q[2],
+                "Max": int(q[3])
+            })
+
+        # Fetch addfile information
         cur.execute("""
             SELECT ID
             FROM addfile

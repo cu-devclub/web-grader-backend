@@ -15,13 +15,12 @@ def main():
     # Parse JSON data from the request
     data = json.loads(request.form.get('CSV_data'))
     CSV_data = data["CSV_data"]
-    MaxTotal = data["MaxTotal"]
     CSYID = data["CSYID"]
     
     ClassID, SchoolYear = GetClassSchoolyear(conn, cursor, CSYID) 
     
     # Specify the initial fieldnames
-    fieldnames = ['ID', 'Name (English)', 'Section', 'Group', 'Score']
+    fieldnames = ['ID', 'Name (English)', 'Section', 'Group', 'Score', 'MaxScore']
 
     # Create a temporary in-memory buffer to store the CSV data
     temp_output = StringIO()
@@ -37,11 +36,8 @@ def main():
     temp_csv_data = temp_output.getvalue()
     temp_output.close()
 
-    # Modify the header names in the CSV data
-    modified_csv_data = temp_csv_data.replace('Score', f'Score ({MaxTotal})')
-
     # Create an in-memory binary stream for the final output
-    output = StringIO(modified_csv_data)
+    output = StringIO(temp_csv_data)
 
     # Set response headers to indicate CSV content
     # headers = {

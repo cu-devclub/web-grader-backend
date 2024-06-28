@@ -23,6 +23,10 @@ def main():
         Release_files = [v for k, v in request.files.items() if k.startswith("Release")]
         Additional_files = [v for k, v in request.files.items() if k.startswith("Add")]
 
+        LockOnDue = form["DueDate"] if form['LockOnDue'] == 'true' else None
+
+        print(LockOnDue)
+
         # Path = <CSYID>/<LID>/(Addi)
         # Path = <CSYID>/<LID>/Source_(index)_(Source)
         # Path = <CSYID>/<LID>/Release_(index)_(Release)
@@ -31,8 +35,8 @@ def main():
 
         GCID = "GID" if (form["IsGroup"] == 'true') else "CID"
 
-        addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {GCID}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(addLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], str(seleted).replace(" ", ""), form["CSYID"], form["Creator"]))
+        addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, `Lock`, {GCID}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(addLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], LockOnDue, str(seleted).replace(" ", ""), form["CSYID"], form["Creator"]))
         conn.commit()
 
         LID = str(cursor.lastrowid)

@@ -38,7 +38,7 @@ def main():
 
         return jsonify({
             'success': True,
-            'msg': 'Please contact admin',
+            'msg': '',
             'data': {
                 'Assignment': assignments
             }

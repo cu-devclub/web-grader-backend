@@ -105,6 +105,18 @@ def main():
         
         seleted = [GetGID(conn, cursor, i, form["CSYID"]) if (form["IsGroup"] == 'true') else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
 
+        lock_query = """
+            SELECT
+                `Lock`
+            FROM 
+                lab
+            WHERE 
+                LID = %s
+        """
+        
+        cursor.execute(lock_query, (form["LID"],))
+        Lock = cursor.fetchone()
+
         # addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {"GID" if (form["IsGroup"] == 'true') else "CID"}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
         GCID = "GID" if (form["IsGroup"] == 'true') else "CID"
         setLab = """
@@ -115,11 +127,12 @@ def main():
                 Name = %s,
                 Publish = %s,
                 Due = %s,
+                `Lock` = %s,
                 """ + GCID + """ = %s
             WHERE 
                 LID = %s;
         """
-        cursor.execute(setLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], str(seleted).replace(" ", ""), form["LID"]))
+        cursor.execute(setLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], form["DueDate"] if form["LOD"] == 'true' else Lock[0], str(seleted).replace(" ", ""), form["LID"]))
         conn.commit()
 
         LID = form["LID"]
