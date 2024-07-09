@@ -3,7 +3,9 @@ import requests
 import mysql.connector
 from flask import jsonify, request
 from function.db import get_db
+import re
 
+regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
 
 def main():
     DataJ = request.get_json()
@@ -11,6 +13,14 @@ def main():
 
     email = DataJ.get("email")
     emailsplit = email.split("@")
+    
+    if(not re.fullmatch(regex, email)):
+        return jsonify({
+            'success': False,
+            'msg': 'Please fill with valid email form.',
+            'data': {}
+        }), 200
+
     if(not emailsplit[1] in ["chula.ac.th", "student.chula.ac.th"]):
         return jsonify({
             'success': False,

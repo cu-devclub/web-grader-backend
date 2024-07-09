@@ -103,8 +103,11 @@ def main():
     file_path = addPath + data[0][0]
     filename = data[0][0]
     if FRL[0] == 1:
-        prefilename = data[0][0].split("\\")[-1].split("_")
-        filename = f'{Email.split("@")[0]}-L{data[0][1]}-Q{int(prefilename[1]) + 1}-{prefilename[2]}'
+        prefilename = os.path.split(data[0][0])[-1].split("_")
+        if FRL[1] == 0:
+            filename = f'{Email.split("@")[0]}-L{data[0][1]}-Q{int(prefilename[1]) + 1}-{prefilename[2]}'
+        if FRL[1] == 1:
+            filename = prefilename[2]
 
     file_content = ""
     # Read the file content

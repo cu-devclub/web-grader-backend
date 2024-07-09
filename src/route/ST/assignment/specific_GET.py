@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from flask import request, jsonify, g
 
@@ -74,15 +75,15 @@ def main():
             SELECT q.QID, COALESCE(s.SID, -1) AS SID, COALESCE(s.Score, 0) AS Score, q.MaxScore,
                    COALESCE(s.SummitedFile, '') AS Filename, COALESCE(s.Timestamp, '') AS Timestamp
             FROM question q
-            LEFT JOIN submitted s ON q.QID = s.QID AND q.LID = s.LID
+            LEFT JOIN submitted s ON q.QID = s.QID AND q.LID = s.LID AND s.UID = %s
             WHERE q.LID = %s
             ORDER BY q.QID
-        """, (LID,))
+        """, (Email.split('@')[0], LID,))
         questions = cur.fetchall()
 
         questions_list = []
         for q in questions:
-            filename = q[4].split('/')[-1] if q[4] else ""
+            filename = os.path.split(q[4])[-1] if q[4] else ""
             timestamp = datetime.strptime(str(q[5]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M") if q[5] else ""
             late = 1 if timestamp and datetime.strptime(timestamp, "%d/%m/%Y %H:%M") > datetime.strptime(lab_info["Due"], "%d/%m/%Y %H:%M") else 0
             if not timestamp:
@@ -91,7 +92,7 @@ def main():
                 "QID": q[0],
                 "SMT": {
                     "SID": q[1],
-                    "Filename": filename.split("\\")[-1],
+                    "Filename": os.path.split(filename)[-1],
                     "Date": timestamp,
                     "Late": late
                 },
