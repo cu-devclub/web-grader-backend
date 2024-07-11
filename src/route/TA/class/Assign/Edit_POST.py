@@ -9,7 +9,7 @@ from function.GetCID import GetCID
 from function.GetGID import GetGID
 from function.loadconfig import UPLOAD_FOLDER
 
-gmt_timezone = pytz.timezone('GMT')
+gmt_timezone = pytz.timezone('Asia/Bangkok')
 
 def update_database(conn, cursor, questions, qnum, source_files, release_files, lid, base_path, CSYID):
     # Fetch existing questions for the given LID, sorted by QID

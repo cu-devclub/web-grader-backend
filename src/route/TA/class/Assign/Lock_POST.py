@@ -19,13 +19,18 @@ def main():
         
         # Get the current time in GMT+7
         current_time = datetime.datetime.now(tz)
+
+
+        msg = ""
         # Prepare update query and data
         if not isLock(conn, cursor, LID):
             query_update = "UPDATE lab SET `Lock` = %s WHERE LID = %s"
             update_data = (current_time, LID)
+            msg = "Closed "
         else:
             query_update = "UPDATE lab SET `Lock` = NULL WHERE LID = %s"
             update_data = (LID,)
+            msg = "Opened "
 
         # Execute update query
         cursor.execute(query_update, update_data)
@@ -33,7 +38,7 @@ def main():
 
         response = {
             "success": True,
-            "msg": "Closed assignment.",
+            "msg": msg + "assignment.",
             "data": {}
         }
 

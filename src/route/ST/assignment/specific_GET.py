@@ -72,8 +72,14 @@ def main():
 
         # Fetch questions and submission information
         cur.execute("""
-            SELECT q.QID, COALESCE(s.SID, -1) AS SID, COALESCE(s.Score, 0) AS Score, q.MaxScore,
-                   COALESCE(s.SummitedFile, '') AS Filename, COALESCE(s.Timestamp, '') AS Timestamp
+            SELECT 
+                q.QID,
+                COALESCE(s.SID, -1) AS SID,
+                COALESCE(s.Score, 0) AS Score, 
+                q.MaxScore,
+                COALESCE(s.SummitedFile, '') AS Filename,
+                COALESCE(s.Timestamp, '') AS Timestamp,
+                q.LastEdit
             FROM question q
             LEFT JOIN submitted s ON q.QID = s.QID AND q.LID = s.LID AND s.UID = %s
             WHERE q.LID = %s
@@ -96,6 +102,7 @@ def main():
                     "Date": timestamp,
                     "Late": late
                 },
+                "Date": datetime.strptime(str(q[6]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
                 "Score": q[2],
                 "Max": int(q[3])
             })

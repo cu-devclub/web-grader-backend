@@ -21,6 +21,16 @@ from function.loadconfig import config, UPLOAD_FOLDER
 # import google.auth.transport.requests
 
 
+# SSL config
+isDev = config['dev'].lower() == "true"
+if not isDev:
+    from flask_sslify import SSLify
+    sslify = SSLify(app)
+
+
+
+
+
 # list route file
 def tree_route(startpath):
     ListRoute = []
@@ -105,5 +115,9 @@ print(tabulate(mount_info, headers=['Route', 'Method', "Path"]))
 
 # start api server
 if __name__ == "__main__":
-    app.run(debug=bool(config['dev']), host=config['HOST'], port=int(config['PORT']))
+    if not isDev:
+        context = ('/etc/letsencrypt/live/grader.mycourseville.com/fullchain.pem', '/etc/letsencrypt/live/grader.mycourseville.com/privkey.pem')
+        app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']), ssl_context=context)
+    else:
+        app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']))
 

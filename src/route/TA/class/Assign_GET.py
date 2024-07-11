@@ -13,7 +13,12 @@ def main():
                 LB.Lab,
                 LB.Name,
                 LB.Publish,
-                LB.Due
+                LB.Due,
+                CASE
+                    WHEN `Lock` IS NULL THEN FALSE
+                    WHEN CONVERT_TZ(NOW(), @@session.time_zone, '+07:00') > `Lock` THEN 1
+                    ELSE 0
+                END AS is_locked
             FROM
                 lab LB
             WHERE 
@@ -34,6 +39,7 @@ def main():
                 "Name": i[2],
                 "Publish": datetime.strptime(str(i[3]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
                 "Due": datetime.strptime(str(i[4]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
+                "Lock": bool(i[5])
             })
 
         return jsonify({

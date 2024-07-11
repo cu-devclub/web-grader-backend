@@ -25,6 +25,7 @@ def main():
     UID = request.form.get("Email").split('@')[0]
     uploaded_file = request.files["file"]
     QID = request.form.get("QID") 
+    print(QID)
 
     upload_time = datetime.now(gmt_timezone)
     
@@ -58,7 +59,7 @@ def main():
 
         q_query = "SELECT QID FROM question WHERE LID = %s"
         cursor.execute(q_query, (result[0],))
-        q = cursor.fetchone()
+        q = cursor.fetchall()
 
         if not result:
             return jsonify({
@@ -68,7 +69,7 @@ def main():
             }), 404
 
         LID = result[0]
-        fQID = q.index(result[1])+1
+        fQID = q.index((result[1],))+1
         QID = result[1]
         CSYID = result[2]
         Source = result[3]

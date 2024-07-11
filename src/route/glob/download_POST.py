@@ -5,6 +5,7 @@ from flask import request, jsonify, g
 from function.checkPermSubmitDown import checkPermSubmitDown
 from function.checkPermQDown import checkPermQDown
 from function.checkPermAddDown import checkPermAddDown
+from function.loadconfig import UPLOAD_FOLDER
 
 def main():
     data = request.get_json()
@@ -84,7 +85,7 @@ def main():
         query = "SELECT SummitedFile FROM submitted WHERE SID = %s"
     elif FRL[0] == 3:
         query = "SELECT Thumbnail FROM class WHERE CSYID = %s"
-        addPath = "files\\UploadFile\\Thumbnail\\"
+        addPath = os.path.join(UPLOAD_FOLDER, "Thumbnail")
     else:
         return jsonify({
             'success': False,
@@ -100,14 +101,15 @@ def main():
     # Close the cursor
     cur.close()
 
-    file_path = addPath + data[0][0]
+    file_path = os.path.join(addPath, data[0][0])
     filename = data[0][0]
+    print(filename)
     if FRL[0] == 1:
         prefilename = os.path.split(data[0][0])[-1].split("_")
         if FRL[1] == 0:
-            filename = f'{Email.split("@")[0]}-L{data[0][1]}-Q{int(prefilename[1]) + 1}-{prefilename[2]}'
+            filename = f'{Email.split("@")[0]}-L{data[0][1]}-Q{int(prefilename[1]) + 1}-{"_".join(prefilename[2:])}'
         if FRL[1] == 1:
-            filename = prefilename[2]
+            filename = "_".join(prefilename[2])
 
     file_content = ""
     # Read the file content
