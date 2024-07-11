@@ -20,17 +20,6 @@ from function.loadconfig import config, UPLOAD_FOLDER
 # from google.oauth2 import id_token
 # import google.auth.transport.requests
 
-
-# SSL config
-isDev = config['dev'].lower() == "true"
-if not isDev:
-    from flask_sslify import SSLify
-    sslify = SSLify(app)
-
-
-
-
-
 # list route file
 def tree_route(startpath):
     ListRoute = []
@@ -62,6 +51,14 @@ app.config['JWT_COOKIE_SAMESITE'] = "None"
 app.config['JWT_COOKIE_SECURE'] = True
 
 jwt = JWTManager(app)
+
+
+# SSL config
+isDev = config['dev'].lower() == "true"
+if not isDev:
+    from flask_sslify import SSLify
+    sslify = SSLify(app)
+
 
 # setup google authen
 app.secret_key = secret_key
