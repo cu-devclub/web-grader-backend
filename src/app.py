@@ -52,6 +52,8 @@ app.config['JWT_COOKIE_SECURE'] = True
 
 jwt = JWTManager(app)
 
+print(config)
+print("let see what inside ^^^ _____________________________________")
 
 # SSL config
 isDev = config['dev'].lower() == "true"
