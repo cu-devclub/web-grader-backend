@@ -52,11 +52,8 @@ app.config['JWT_COOKIE_SECURE'] = True
 
 jwt = JWTManager(app)
 
-print(config)
-print("let see what inside ^^^ _____________________________________")
-
 # SSL config
-isDev = config['dev'].lower() == "true"
+isDev = config['DEV'].lower() == "true"
 if not isDev:
     from flask_sslify import SSLify
     sslify = SSLify(app)
