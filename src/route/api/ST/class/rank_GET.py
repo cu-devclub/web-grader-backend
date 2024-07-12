@@ -46,9 +46,15 @@ def main():
     # Calculate student's score
     cur.execute("""
         SELECT
-            COALESCE(SUM(SMT.Score), 0)
+            COALESCE(SUM(CASE 
+                WHEN JSON_CONTAINS(LB.CID, CAST(STD.CID AS CHAR), "$") OR JSON_CONTAINS(LB.GID, CAST(STD.GID AS CHAR), "$")
+                THEN SMT.Score
+                ELSE 0 
+            END), 0) AS Score
         FROM
             submitted SMT
+            LEFT JOIN lab LB ON SMT.LID = LB.LID
+            LEFT JOIN student STD ON STD.UID = SMT.UID
         WHERE
             SMT.UID = %s AND SMT.CSYID = %s
     """, (UID, CSYID))
@@ -58,10 +64,15 @@ def main():
     cur.execute("""
         SELECT
             STD.UID,
-            COALESCE(SUM(SMT.Score), 0) AS Score
+            COALESCE(SUM(CASE 
+                WHEN JSON_CONTAINS(LB.CID, CAST(STD.CID AS CHAR), "$") OR JSON_CONTAINS(LB.GID, CAST(STD.GID AS CHAR), "$")
+                THEN SMT.Score
+                ELSE 0 
+            END), 0) AS Score
         FROM
             student STD
             LEFT JOIN submitted SMT ON SMT.UID = STD.UID AND SMT.CSYID = STD.CSYID
+            LEFT JOIN lab LB ON SMT.LID = LB.LID
         WHERE
             STD.CSYID = %s
         GROUP BY

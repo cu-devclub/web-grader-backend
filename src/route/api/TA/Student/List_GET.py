@@ -11,12 +11,17 @@ def main():
         STD.UID,
         USR.Name,
         SCT.Section,
-        COALESCE(SUM(SMT.Score), 0) AS Score,
+        COALESCE(SUM(CASE 
+        	WHEN JSON_CONTAINS(LB.CID, CAST(STD.CID AS CHAR), "$") OR JSON_CONTAINS(LB.GID, CAST(STD.GID AS CHAR), "$")
+        	THEN SMT.Score
+        	ELSE 0 
+    	END), 0) AS Score,
         COALESCE(GRP.Group, '-') AS `Group`
     FROM 
         student STD
         LEFT JOIN user USR ON USR.UID = STD.UID
         LEFT JOIN submitted SMT ON SMT.UID = STD.UID AND SMT.CSYID = STD.CSYID
+        LEFT JOIN lab LB ON SMT.LID = LB.LID
         INNER JOIN section SCT ON STD.CSYID = SCT.CSYID AND SCT.CID = STD.CID
         LEFT JOIN `group` GRP ON GRP.GID = STD.GID
     WHERE

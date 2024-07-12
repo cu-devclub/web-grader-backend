@@ -48,17 +48,23 @@ def main():
 
                 if 'Group' in csv_reader.fieldnames:
                     # Validate groups in CSV
-                    groups = {row['Group'] for row in csv_reader}
+                    groups = {row['Group'] for row in csv_reader}   
                     if ('' in groups or '-' in groups) and not ('' in groups and '-' in groups):
-                        return jsonify({'success': False, 'msg': 'Invalid group data'})
+                        return jsonify({'success': False, 'msg': 'Invalid group data\nPlease ensure that there are no empty rows in your CSV file.'})
 
                 # Reset csv reader
                 file.seek(0)
                 csv_reader = csv.DictReader(file)
 
+                # fetch current list of student in class to check who to delete
+                cursor.execute("SELECT UID FROM student WHERE CSYID=%s", (CSYID))
+                current_student = list(cursor.fetchall())
+
                 # Process CSV and update the database
                 for row in csv_reader:
                     student_id = row['ID']
+                    if (str(student_id).strip(),) in current_student:
+                        current_student.remove((str(student_id).strip(),))
                     section = row['Section']
                     group = row['Group'] if 'Group' in csv_reader.fieldnames else "-"
                     student_Name = row['Name (English)']
@@ -94,34 +100,38 @@ def main():
                         if student_data[1] != CID or student_data[4] != GID:  # Adjust index based on column position
                             cursor.execute("UPDATE student SET CID=%s, GID=%s WHERE UID=%s AND CSYID=%s", (CID, GID, student_id, CSYID))
                             
-                            # Delete submitted records where LID not in student's CID or GID
-                            cursor.execute("""
-                                SELECT LID FROM lab WHERE CSYID=%s AND (
-                                    JSON_CONTAINS(CID, %s, '$') = 0 OR JSON_CONTAINS(GID, %s, '$') = 0
-                                )
-                            """, (CSYID, json.dumps([CID]), json.dumps([GID])))
-                            lab_ids = cursor.fetchall()
-                            if lab_ids:
-                                lab_ids = [lid[0] for lid in lab_ids]  # Extract LID values
+                            # # Delete submitted records where LID not in student's CID or GID
+                            # cursor.execute("""
+                            #     SELECT LID FROM lab WHERE CSYID=%s AND (
+                            #         JSON_CONTAINS(CID, %s, '$') = 0 OR JSON_CONTAINS(GID, %s, '$') = 0
+                            #     )
+                            # """, (CSYID, json.dumps([CID]), json.dumps([GID])))
+                            # lab_ids = cursor.fetchall()
+                            # if lab_ids:
+                            #     lab_ids = [lid[0] for lid in lab_ids]  # Extract LID values
 
-                                # Step 1: Retrieve the SubmittedFile paths
-                                query = "SELECT SummitedFile FROM submitted WHERE UID=%s AND LID=%s"
-                                file_paths = []
-                                for lid in lab_ids:
-                                    cursor.execute(query, (student_id, lid))
-                                    result = cursor.fetchone()
-                                    if result:
-                                        file_paths.append(result[0])
+                            #     # Step 1: Retrieve the SubmittedFile paths
+                            #     query = "SELECT SummitedFile FROM submitted WHERE UID=%s AND LID=%s"
+                            #     file_paths = []
+                            #     for lid in lab_ids:
+                            #         cursor.execute(query, (student_id, lid))
+                            #         result = cursor.fetchone()
+                            #         if result:
+                            #             file_paths.append(result[0])
 
-                                # Step 2: Delete the files from the directory
-                                for file_path in file_paths:
-                                    if os.path.exists(file_path):
-                                        os.remove(file_path)
+                            #     # Step 2: Delete the files from the directory
+                            #     for file_path in file_paths:
+                            #         if os.path.exists(file_path):
+                            #             os.remove(file_path)
 
-                                # Step 3: Delete the records from the database
-                                cursor.executemany("DELETE FROM submitted WHERE UID=%s AND LID=%s", [(student_id, lid) for lid in lab_ids])
+                            #     # Step 3: Delete the records from the database
+                            #     cursor.executemany("DELETE FROM submitted WHERE UID=%s AND LID=%s", [(student_id, lid) for lid in lab_ids])
                     else:
                         cursor.execute("INSERT INTO student (CID, UID, CSYID, GID) VALUES (%s, %s, %s, %s)", (CID, student_id, CSYID, GID))
+
+                # remove remain student that doesn't show in new csv
+                cursor.executemany("DELETE FROM student WHERE UID=%s AND CSYID=%s", [(i[0], CSYID) for i in current_student])
+
 
                 connection.commit()
                 return jsonify({'success': True, 'msg': 'CSV processed successfully'})
