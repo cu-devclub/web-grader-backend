@@ -39,7 +39,7 @@ for i in list_route:
 
 # init api server
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "https://grader.mycourseville.com"}})
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" # to allow Http traffic for local dev
 
@@ -54,15 +54,15 @@ jwt = JWTManager(app)
 
 # SSL config
 isDev = config['DEV'].lower() == "true"
-if not isDev:
-    # from flask_sslify import SSLify
-    # sslify = SSLify(app)
-    from OpenSSL import SSL
+# if not isDev:
+#     # from flask_sslify import SSLify
+#     # sslify = SSLify(app)
+#     from OpenSSL import SSL
 
-    context = SSL.Context(SSL.TLSv1_2_METHOD)
-    context.use_privatekey_file('/etc/letsencrypt/live/grader.mycourseville.com/privkey.pem')
-    context.use_certificate_chain_file('/etc/letsencrypt/live/grader.mycourseville.com/fullchain.pem')
-    context.use_certificate_file('/etc/letsencrypt/live/grader.mycourseville.com/cert.pem')
+#     context = SSL.Context(SSL.TLSv1_2_METHOD)
+#     context.use_privatekey_file('/etc/letsencrypt/live/grader.mycourseville.com/privkey.pem')
+#     context.use_certificate_chain_file('/etc/letsencrypt/live/grader.mycourseville.com/fullchain.pem')
+#     context.use_certificate_file('/etc/letsencrypt/live/grader.mycourseville.com/cert.pem')
 
 
 # setup google authen
@@ -117,8 +117,8 @@ print(tabulate(mount_info, headers=['Route', 'Method', "Path"]))
 
 # start api server
 if __name__ == "__main__":
-    if not isDev:
-        app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']), ssl_context=context)
-    else:
-        app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']))
+    # if not isDev:
+    #     app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']), ssl_context=context)
+    # else:
+    app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']))
 
