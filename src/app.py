@@ -69,7 +69,7 @@ isDev = config['DEV'].lower() == "true"
 app.secret_key = secret_key
 
 # add route to /
-@app.route('/')
+@app.route('/api/')
 def index():
     return Response("I'm a teapot so I sent 418 error.", status=418, mimetype='application/json')
 
@@ -87,12 +87,12 @@ def teardown_request(exception=None):
 
 
 
-@app.route('/Thumbnail/<filename>')
+@app.route('/api/Thumbnail/<filename>')
 def get_image_thumbnail(filename):
     filepath = os.path.join(UPLOAD_FOLDER, 'Thumbnail', filename)
     return send_from_directory(os.path.dirname(filepath), os.path.basename(filepath))
 
-@app.route("/image/<filename>", methods=["GET"])
+@app.route("/api/image/<filename>", methods=["GET"])
 def get_image(filename):
     image_extensions = {'png', 'jpg', 'jpeg', 'gif'}
     file_extension = filename.split('.')[-1]
