@@ -18,11 +18,7 @@ def main():
             LAB.Name, 
             LAB.Publish, 
             LAB.Due,
-            COALESCE(SUM(CASE 
-                WHEN JSON_CONTAINS(LAB.CID, CAST(STD.CID AS CHAR), "$") OR JSON_CONTAINS(LAB.GID, CAST(STD.GID AS CHAR), "$")
-                THEN SMT.Score
-                ELSE 0 
-            END), 0) AS Score,
+            COALESCE(SUM(SMT.Score), 0) AS Score,
             COALESCE(QST.MaxScore, 0) AS MaxScore,
             CASE 
                 WHEN SMT.LatestTimestamp IS NOT NULL THEN TRUE
@@ -41,17 +37,18 @@ def main():
             OR JSON_CONTAINS(LAB.GID, CAST(STD.GID AS JSON), '$'))
             AND STD.UID = %s
         LEFT JOIN 
-            (SELECT 
+            (SELECT
+                UID,
                 LID, 
                 MAX(Timestamp) AS LatestTimestamp, 
                 SUM(Score) AS Score
             FROM 
                 submitted
             GROUP BY 
-                LID
+                LID, UID
             ) AS SMT
         ON 
-            LAB.LID = SMT.LID
+            LAB.LID = SMT.LID AND SMT.UID = STD.UID
         LEFT JOIN 
             (SELECT 
                 LID, 
