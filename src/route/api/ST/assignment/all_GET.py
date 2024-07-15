@@ -104,6 +104,7 @@ def main():
                 "TurnIn": bool(row[7]),
                 "Late": bool(row[8])
             })
+
         return jsonify({
             'success': True,
             'msg': '',
