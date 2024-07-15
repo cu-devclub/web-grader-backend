@@ -4,6 +4,7 @@ import shutil
 from flask import request, jsonify
 
 from function.db import get_db
+from function.isCET import isCET
 
 def delete_file(file_path):
     if os.path.exists(file_path):
@@ -17,13 +18,42 @@ def delete_directory_if_empty(directory_path):
         return True
     return False
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     try:
         conn = get_db()
         cursor = conn.cursor()
 
-        data = request.get_json()
-        LID = data.get('LabID')
+        form = request.get_json()
+        LID = form.get('LabID')
+
+        query = """ 
+            SELECT
+                LB.CSYID
+            FROM
+                lab LB
+            WHERE 
+                LB.LID = %s
+            """
+        cursor.execute(query, (LID,))
+        data = cursor.fetchone()
+        
+        if data == None:
+            jsonify({
+                'success': False,
+                'msg': "Lab not found",
+                'data': {}
+            }), 200
+
+        if not isCET(conn, cursor, Email, data[0]):
+            jsonify({
+                'success': False,
+                'msg': "You don't have permission.",
+                'data': {}
+            }), 200
 
         # Retrieve and delete files from the 'submitted' table
         select_sub_query = "SELECT SummitedFile FROM submitted WHERE LID = %s"

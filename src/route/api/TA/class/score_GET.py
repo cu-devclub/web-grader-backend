@@ -2,8 +2,13 @@ import json
 from datetime import datetime
 
 from flask import request, jsonify, g
+from function.isCET import isCET
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     conn = g.db
     cursor = conn.cursor()
 
@@ -14,6 +19,32 @@ def main():
             'msg': 'LID is required',
             'data': {}
         }), 400
+
+    query = """ 
+        SELECT
+            LB.CSYID
+        FROM
+            lab LB
+        WHERE 
+            LB.LID = %s
+        """
+    cursor.execute(query, (LID,))
+    data = cursor.fetchone()
+    
+    if data == None:
+        jsonify({
+            'success': False,
+            'msg': "Lab not found",
+            'data': {}
+        }), 200
+
+    if not isCET(conn, cursor, Email, data[0]):
+        jsonify({
+            'success': False,
+            'msg': "You don't have permission.",
+            'data': {}
+        }), 200
+
 
     try:
         # Get lab details

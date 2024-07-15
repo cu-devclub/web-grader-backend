@@ -1,10 +1,21 @@
 from flask import Flask, request, jsonify, g
 import json
+from function.isSTD import isSTD
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
-    Email = request.args.get('Email')
+    Email = get_jwt_identity()['email']
     CSYID = request.args.get('CSYID')
     cur = g.db.cursor()
+
+    if(not isSTD(g.db, cur, Email, CSYID)):
+        return jsonify({
+            'success': False,
+            'msg': "You don't have permission",
+            'data': {}
+        }), 200
 
     # Fetch user UID from Email
     cur.execute("SELECT UID FROM user WHERE Email = %s", (Email,))

@@ -1,12 +1,24 @@
 from flask import request, jsonify, g
 from flask_jwt_extended import jwt_required
 
-# @jwt_required()
+from function.isCET import isCET
+
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     try:
         
         #Param
         CSYID = request.args.get('CSYID')
+
+        if not isCET(g.db, g.db.cursor(), Email, CSYID):
+            jsonify({
+                'success': False,
+                'msg': "You don't have permission.",
+                'data': {}
+            }), 200
         
         # Create a cursor
         cur = g.db.cursor()
@@ -48,21 +60,6 @@ def main():
                 "Instructor": PFS
             }
         )
-
-        # for row in data:
-        #     csyid, classname, classid, schoolyear, thumbnail = row
-        #     class_info = {
-        #         'ID': csyid,
-        #         'ClassName': classname,
-        #         'ClassID': classid,
-        #         'Thumbnail': thumbnail if thumbnail else None
-        #     }
-        #     if schoolyear not in transformed_data:
-        #         transformed_data[schoolyear] = [class_info]
-        #     else:
-        #         transformed_data[schoolyear].append(class_info)
-    
-        # return jsonify(transformed_data)
 
     except Exception as e:
         print(e)

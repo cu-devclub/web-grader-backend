@@ -4,12 +4,15 @@ from flask import request, jsonify, g
 
 from function.isLock import isLock
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     try:
         
         # Params
         LID = request.args.get('LID')
-        Email = request.args.get('Email')  # change this to jwt later
 
         # Create a cursor
         cur = g.db.cursor()

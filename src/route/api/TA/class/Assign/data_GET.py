@@ -2,12 +2,42 @@ from function.db import get_db
 from flask import request, jsonify
 
 from function.isLock import isLock
+from function.isCET import isCET
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     conn = get_db()
     cursor = conn.cursor()
     
     LID = request.args.get("LID")
+
+    query = """ 
+        SELECT
+            LB.CSYID
+        FROM
+            lab LB
+        WHERE 
+            LB.LID = %s
+        """
+    cursor.execute(query, (LID,))
+    data = cursor.fetchone()
+    
+    if data == None:
+        jsonify({
+            'success': False,
+            'msg': "Lab not found",
+            'data': {}
+        }), 200
+
+    if not isCET(conn, cursor, Email, data[0]):
+        jsonify({
+            'success': False,
+            'msg': "You don't have permission.",
+            'data': {}
+        }), 200
 
     try:
         # Retrieve lab details
@@ -103,7 +133,6 @@ def main():
                 "Lock": isLock(conn, cursor, LID),
                 "IsGroup": isGroup,
                 "Selected": [PreSelectList[int(i)] for i in [i for i in newD5.strip("[] ").split(",")]],
-                # "Selected": [],
                 "SelectList": list(PreSelectList.values()),
                 "Question": [{"id": i+1, "QID": questions[i][0], "score": int(questions[i][1])} for i in range(len(questions))],
                 "addfile": [file[0] for file in addfiles]

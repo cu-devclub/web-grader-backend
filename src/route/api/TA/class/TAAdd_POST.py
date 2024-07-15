@@ -2,18 +2,23 @@ from flask import request, jsonify
 from re import fullmatch
 
 from function.db import get_db
-from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
+from function.isCET import isCET
 
-# @jwt_required()
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
     conn = get_db()
     cursor = conn.cursor()
-    # verify_jwt_in_request()
-
-    # adder = get_jwt_identity()
-    adder = {}
+    adder = get_jwt_identity()
     Data = request.get_json()
-    adder["email"] = Data.get("AEmail")
+
+    if not isCET(conn, cursor, adder['email'], Data.get("CSYID")):
+        jsonify({
+            'success': False,
+            'msg': "You don't have permission.",
+            'data': {}
+        }), 200
 
     # check mail
     if(not fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', Data.get("Email"))):

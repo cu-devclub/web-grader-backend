@@ -1,61 +1,16 @@
-from flask import request, jsonify, g
+from function.db import get_db
+from flask import jsonify, request
 
 def main():
-    try:
-        #Param
-        UID = request.args.get('UID')
-        
-        # Create a cursor
-        cur = g.db.cursor()
-        
-        query = """
-            SELECT DISTINCT
-                SCT.CID,
-                CLS.ClassName,
-                CLS.ClassID,
-                SCT.Section,
-                CLS.SchoolYear,
-                CLS.Thumbnail,
-                CLS.ClassCreator,
-                2 as ClassRole,
-                CLS.CSYID
-            FROM
-                User USR
-                INNER JOIN classeditor CET
-                LEFT JOIN class CLS ON CET.CSYID = CLS.CSYID 
-                INNER JOIN section SCT ON SCT.CSYID = CLS.CSYID
-                LEFT JOIN student STD ON STD.CID = SCT.CID 
-            WHERE
-                USR.UID = %s
-                AND USR.Email IN (CET.Email)
-                AND Section <> 0
-            ORDER BY
-                SchoolYear DESC,ClassName ASC;
-        """
-
-        # Execute a SELECT statement
-        cur.execute(query,(UID))
-        # Fetch all rows
-        data = cur.fetchall()
-
-        # Close the cursor
-        cur.close()
-
-        # Convert the result to the desired structure
-        transformed_data = []
-        for row in data:
-            cid, name, class_id, section, school_year, thumbnail, classcreator, classrole, csyid = row
-            transformed_data.append({
-                "ClassID": class_id,
-                "ClassName": name,
-                "ID": csyid,
-                "SchoolYear": school_year,
-                "Section": section,
-                "Thumbnail": thumbnail
-            })
-            
-        return jsonify(transformed_data)
-
-    except Exception as e:
-        print(e)
-        return jsonify({'error': 'An error occurred'}), 500
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    CSYID = request.args.get("CSYID")
+    section_query = """SELECT SCT.Section FROM section SCT WHERE SCT.CSYID = %s"""
+    cursor.execute(section_query, (CSYID,))
+    data = cursor.fetchall()
+    
+    # Transform the fetched data into a list of section values
+    transformdata = sorted([row[0] for row in data])
+    
+    return jsonify(transformdata)

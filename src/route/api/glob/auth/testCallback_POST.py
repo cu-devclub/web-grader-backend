@@ -5,6 +5,8 @@ from flask import jsonify, request
 from function.db import get_db
 import re
 
+from flask_jwt_extended import create_access_token, set_access_cookies, get_csrf_token
+
 regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
 
 def main():
@@ -47,9 +49,22 @@ def main():
             'data': {}
         }), 200
 
+    expires_access = datetime.timedelta(days=30)
+
+
+    ac_token_data = {
+        "email": email,
+        "uid": UID,
+        "role": role
+    }
+
+    access_token = create_access_token(identity=ac_token_data, expires_delta=expires_access)
+    ac_token_data['csrf_token'] = get_csrf_token(access_token)
     resp = jsonify({
         'success': True,
         'msg': '',
-        'data': ''
+        'data': ac_token_data
     })
+    set_access_cookies(resp, access_token)
+
     return resp, 200

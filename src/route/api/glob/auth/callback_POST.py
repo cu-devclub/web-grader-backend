@@ -43,7 +43,6 @@ def main():
         }), 200
     UID = emailsplit[0]
     name = id_info.get("name")
-    # profile = id_info.get("picture")
     role = 1 if ("student" in emailsplit[1]) else 2
 
     USR_data = (email, UID, name, role)
@@ -63,15 +62,6 @@ def main():
             'data': {}
         }), 200
 
-
-    # connection = sqlite3.connect('sql.db')
-    # cursor = connection.execute(f"SELECT * from user where email='{email}'")
-    # if len(cursor.fetchall()) == 0:
-    #     connection.execute(f"INSERT INTO user VALUES ('{name}', '{email}', '{profile}')")
-    #     connection.commit()
-    # cursor.close()
-    # connection.close()
-
     expires_access = datetime.timedelta(days=30)
 
 
@@ -82,20 +72,12 @@ def main():
     }
 
     access_token = create_access_token(identity=ac_token_data, expires_delta=expires_access)
-    # resp = Response(jsonify({
-    #     'success': True,
-    #     'msg': '',
-    #     'data': ac_token_data
-    # }))
     ac_token_data['csrf_token'] = get_csrf_token(access_token)
     resp = jsonify({
         'success': True,
         'msg': '',
         'data': ac_token_data
     })
-    # resp.headers.add('Set-Cookie', 'access_token_cookie=' + access_token + '; SameSite=None; Secure')
     set_access_cookies(resp, access_token)
-
-    # resp.headers['Access-Control-Allow-Origin'] = '*'
 
     return resp, 200

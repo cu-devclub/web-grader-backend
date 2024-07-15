@@ -8,6 +8,7 @@ from function.db import get_db
 from function.GetCID import GetCID
 from function.GetGID import GetGID
 from function.loadconfig import UPLOAD_FOLDER
+from function.isCET import isCET
 
 gmt_timezone = pytz.timezone('Asia/Bangkok')
 
@@ -64,8 +65,6 @@ def update_database(conn, cursor, questions, qnum, source_files, release_files, 
                 WHERE QID = %s AND LID = %s
             ''', (max_score, source_path, release_path, current_qid, lid))
         else:
-            print(source_path)
-            print(release_path)
             # Ensure source_path and release_path are not None before inserting
             if source_path is None or release_path is None:
                 raise ValueError(f"Cannot insert new question with QID {qid}: SourcePath or ReleasePath is None.")
@@ -88,11 +87,22 @@ def update_database(conn, cursor, questions, qnum, source_files, release_files, 
     conn.commit()
 
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     conn = get_db()
     cursor = conn.cursor()
 
     form = request.form
+
+    if not isCET(conn, cursor, Email, form["CSYID"]):
+        jsonify({
+            'success': False,
+            'msg': "You don't have permission.",
+            'data': {}
+        }), 200
 
     try:
         Source_files = {k.replace("Source", ""):v for k, v in request.files.items() if k.startswith("Source")}
@@ -117,7 +127,6 @@ def main():
         cursor.execute(lock_query, (form["LID"],))
         Lock = cursor.fetchone()
 
-        # addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, {"GID" if (form["IsGroup"] == 'true') else "CID"}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s)"
         GCID = "GID" if (form["IsGroup"] == 'true') else "CID"
         setLab = """
             UPDATE 

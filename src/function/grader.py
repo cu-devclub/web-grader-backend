@@ -91,27 +91,6 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
 
     # Filter code cell
     ScodeCell = [i["source"] for i in Qfile["cells"] if i.get("cell_type") == "code"]
-
-
-    # making dict of tester that belong to each solution section
-    # tester = {}
-    # if len(solutionLocation) == len(testerL):
-    #     for i in range(len(solutionLocation)):
-    #         tester[solutionLocation[i]] = testerL[i]
-    # else:
-    #     for i in range(len(solutionLocation)):
-    #         key = solutionLocation[i]
-    #         value = -1
-    #         for j in range(len(testerL)):
-    #             if(i < len(solutionLocation)-1):
-    #                 if key < testerL[j] < solutionLocation[i+1]:
-    #                     value = testerL[j]
-    #                     break
-    #             else:
-    #                 if key < testerL[j]:
-    #                     value = testerL[j]
-    #                     break
-    #         tester[key] = value
     
     #check number of testcase list and solution
     if len(testcaseL) != len(solutionLocation):
@@ -150,7 +129,6 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
                 if(p): temp_cor_p += pointsL[num]
             except Exception:
                 pass
-                # print(traceback.format_exc())
             num += 1
         score.append([temp_cor_p, temp_max_p])
     return False, score

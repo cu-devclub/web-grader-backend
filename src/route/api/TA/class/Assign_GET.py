@@ -2,10 +2,23 @@ import mysql.connector
 from datetime import datetime
 from flask import request, jsonify,g
 
+from function.isCET import isCET
+
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     try:
         cursor = g.db.cursor()
         CSYID = request.args.get('CSYID')
+
+        if not isCET(g.db, cursor, Email, CSYID):
+            jsonify({
+                'success': False,
+                'msg': "You don't have permission.",
+                'data': {}
+            }), 200
 
         query = """ 
             SELECT

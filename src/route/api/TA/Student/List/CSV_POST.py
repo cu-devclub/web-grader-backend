@@ -6,9 +6,14 @@ from flask import request, jsonify
 
 from function.db import get_db
 from function.GetClassSchoolyear import GetClassSchoolyear
+from function.isCET import isCET
 
 
-def main():   
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
+def main():
+    Email = get_jwt_identity()['email']
     conn = get_db()
     cursor = conn.cursor()
     
@@ -16,6 +21,13 @@ def main():
     data = json.loads(request.form.get('CSV_data'))
     CSV_data = data["CSV_data"]
     CSYID = data["CSYID"]
+
+    if not isCET(conn, cursor, Email, CSYID):
+        jsonify({
+            'success': False,
+            'msg': "You don't have permission.",
+            'data': {}
+        }), 200
     
     ClassID, SchoolYear = GetClassSchoolyear(conn, cursor, CSYID) 
     
@@ -38,15 +50,7 @@ def main():
 
     # Create an in-memory binary stream for the final output
     output = StringIO(temp_csv_data)
-
-    # Set response headers to indicate CSV content
-    # headers = {
-    #     "Content-Disposition": f"attachment; filename={ClassID}-{SchoolYear}-{datetime.now()}.csv",
-    #     "Content-Type": "text/csv"
-    # }
-
-    # Return the content of the final output stream as a Flask response
-    # print(output.getvalue())
+    
     return jsonify({
         'success': True,
         'msg': '',

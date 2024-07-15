@@ -1,9 +1,11 @@
 from flask import request, jsonify, g
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    EmailR = get_jwt_identity()['email']
     try:
-        #Param
-        EmailR = request.args.get('Email')
         
         # Create a cursor
         cur = g.db.cursor()

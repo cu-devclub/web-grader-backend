@@ -18,14 +18,17 @@ def delete_file(file_path):
         return True
     return False
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     conn = get_db()
     cursor = conn.cursor()
     
-    UID = request.form.get("Email").split('@')[0]
+    UID = Email.split('@')[0]
     uploaded_file = request.files["file"]
-    QID = request.form.get("QID") 
-    print(QID)
+    QID = request.form.get("QID")
 
     upload_time = datetime.now(gmt_timezone)
     
@@ -44,6 +47,40 @@ def main():
         }), 400
 
     try:
+
+        query = """
+            SELECT 
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM user u
+                        JOIN student s ON u.UID = s.UID
+                        JOIN lab l ON s.CSYID = l.CSYID
+                        JOIN question q on q.LID = l.LID
+                        WHERE u.Email = %s AND q.QID = %s
+                        AND (
+                            JSON_CONTAINS(l.CID, CAST(s.CID AS JSON), '$')
+                            OR JSON_CONTAINS(l.GID, CAST(s.GID AS JSON), '$')
+                        )
+                    ) 
+                    THEN 1 
+                    ELSE 0 
+                END AS access;
+        """
+        cursor.execute(query, (Email, QID))
+        # Fetch access result
+        data = cursor.fetchone()
+
+        if not bool(int(data[0])):
+            return jsonify({
+                'success': False,
+                'msg': "You don't have permission to this question",
+                'data': {}
+            }), 200
+
+
+
+
         # Query to select LID, QID, and CSYID from question where QID = %s
         select_query = "SELECT LID, QID, CSYID, SourcePath, MaxScore FROM question WHERE QID = %s"
         cursor.execute(select_query, (QID,))

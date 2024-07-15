@@ -15,10 +15,6 @@ from function.google import secret_key
 from function.db import get_db
 from function.loadconfig import config, UPLOAD_FOLDER
 
-# import requests
-# from pip._vendor import cachecontrol
-# from google.oauth2 import id_token
-# import google.auth.transport.requests
 
 # list route file
 def tree_route(startpath):
@@ -47,7 +43,7 @@ if not isDev:
 else: 
     CORS(app, supports_credentials=True)
 
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" # to allow Http traffic for local dev
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" if isDev else "0" # to allow Http traffic for local dev
 
 # setup JWT
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
@@ -78,8 +74,6 @@ def teardown_request(exception=None):
     if db is not None:
         db.close()
 
-
-
 @app.route('/api/Thumbnail/<filename>')
 def get_image_thumbnail(filename):
     filepath = os.path.join(UPLOAD_FOLDER, 'Thumbnail', filename)
@@ -96,6 +90,26 @@ def get_image(filename):
     else:
         return "Invalid image file format", 400  # Return a 400 Bad Request status for invalid image formats
 
+@jwt.unauthorized_loader
+def custom_unauthorized_response(callback):
+    return jsonify({
+        'success': False,
+        'msg':"Unauthorized."
+    })
+
+@jwt.invalid_token_loader
+def custom_invalid_token_response(callback):
+    return jsonify({
+        'success': False,
+        'msg':"Invalid token."
+    })
+
+@jwt.expired_token_loader
+def custom_expired_token_response(jwt_header, jwt_payload):
+    return jsonify({
+        'success': False,
+        'msg': "Expired token."
+    })
 
 mount_info = []
 
@@ -104,7 +118,6 @@ for i in gbl['list_route']:
     x = i.split("_")
     app.add_url_rule('/'+x[0].replace('route.', '').replace('.', '/'), i, gbl[i].main, methods=x[1].split("-"))
     mount_info.append([Fore.GREEN + x[0], Fore.CYAN + x[1], Fore.YELLOW + x[0].replace('route.', '').replace('.', '/') + Style.RESET_ALL])
-    # print(Fore.GREEN + x[0] + " method " + Fore.CYAN + x[1] + Fore.YELLOW + " mounted to " + Fore.GREEN + x[0].replace('route.', '').replace('.', '/') + Style.RESET_ALL)
 
 print(tabulate(mount_info, headers=['Route', 'Method', "Path"]))
 

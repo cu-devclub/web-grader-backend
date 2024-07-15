@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 @jwt_required()
 def main():
-    email = get_jwt_identity()
+    email = get_jwt_identity()['email']
 
 
     cur = g.db.cursor()

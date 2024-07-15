@@ -7,11 +7,15 @@ from function.checkPermQDown import checkPermQDown
 from function.checkPermAddDown import checkPermAddDown
 from function.loadconfig import UPLOAD_FOLDER
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
+
     data = request.get_json()
     fileRequest = data.get('fileRequest')
-    Email = data.get("Email")
-    # fileRequest = ""
+    
     # 0_<perm>_<ID>        <Additional file>
     # 1_<perm>_<QID>       <Question release>
     # 1_<perm>_<QID>       <Question source>
@@ -103,13 +107,12 @@ def main():
 
     file_path = os.path.join(addPath, data[0][0])
     filename = data[0][0]
-    print(filename)
     if FRL[0] == 1:
         prefilename = os.path.split(data[0][0])[-1].split("_")
         if FRL[1] == 0:
             filename = f'{Email.split("@")[0]}-L{data[0][1]}-Q{int(prefilename[1]) + 1}-{"_".join(prefilename[2:])}'
         if FRL[1] == 1:
-            filename = "_".join(prefilename[2])
+            filename = "_".join(prefilename[2:])
 
     file_content = ""
     # Read the file content

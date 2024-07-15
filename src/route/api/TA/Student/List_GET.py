@@ -1,9 +1,22 @@
 from flask import request, jsonify, g
 import json
 
+from function.isCET import isCET
+
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     CSYID = request.args.get('CSYID')
     cur = g.db.cursor()
+
+    if not isCET(g.db, cur, Email, CSYID):
+        jsonify({
+            'success': False,
+            'msg': "You don't have permission.",
+            'data': {}
+        }), 200
 
     # Query to get the list of students and their scores
     StudentList_query = """

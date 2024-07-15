@@ -2,23 +2,29 @@ import mysql.connector
 from flask import request, jsonify
 
 from function.db import get_db
+from function.isCET import isCET
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@jwt_required()
 def main():
+    Email = get_jwt_identity()['email']
     
     conn = get_db()
     cursor = conn.cursor()
-    
-    Section = request.form.get('Section')
     
     ClassName = request.form.get('ClassName')
     ClassID = request.form.get('ClassID')
     SchoolYear = request.form.get('SchoolYear')
     CSYID = request.form.get('CSYID')
+
+    if not isCET(conn, cursor, Email, CSYID):
+        jsonify({
+            'success': False,
+            'msg': "You don't have permission.",
+            'data': {}
+        }), 200
     
-    print('Data:',ClassName, ClassID, SchoolYear, CSYID)
-    """ csvfile = request.files.get['file1']
-    thumbnailfile = request.files.get['file2'] """
-    """ Thumbnail = %s thumbnailfile.filename"""
     try:
         update_class = """ 
             UPDATE class
