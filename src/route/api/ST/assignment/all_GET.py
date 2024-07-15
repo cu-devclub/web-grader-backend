@@ -18,7 +18,11 @@ def main():
             LAB.Name, 
             LAB.Publish, 
             LAB.Due,
-            COALESCE(SMT.Score, 0) AS Score,
+            COALESCE(SUM(CASE 
+                WHEN JSON_CONTAINS(LAB.CID, CAST(STD.CID AS CHAR), "$") OR JSON_CONTAINS(LAB.GID, CAST(STD.GID AS CHAR), "$")
+                THEN SMT.Score
+                ELSE 0 
+            END), 0) AS Score,
             COALESCE(QST.MaxScore, 0) AS MaxScore,
             CASE 
                 WHEN SMT.LatestTimestamp IS NOT NULL THEN TRUE
