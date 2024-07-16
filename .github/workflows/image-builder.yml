@@ -39,6 +39,7 @@ jobs:
           envkey_DBUSER: ${{ secrets.DBUSER }}
           envkey_DBPASS: ${{ secrets.DBPASS }}
           envkey_DBNAME: ${{ secrets.DBNAME }}
+          envkey_DOMAIN: ${{ secrets.DOMAIN }}
           file_name: .env
           directory: ./src/config/
       -
