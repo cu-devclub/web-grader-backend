@@ -82,7 +82,8 @@ def main():
                 q.MaxScore,
                 COALESCE(s.SummitedFile, '') AS Filename,
                 COALESCE(s.Timestamp, '') AS Timestamp,
-                q.LastEdit
+                q.LastEdit,
+                COALESCE(s.OriginalName, '') AS OriginalName
             FROM question q
             LEFT JOIN submitted s ON q.QID = s.QID AND q.LID = s.LID AND s.UID = %s
             WHERE q.LID = %s
@@ -103,7 +104,8 @@ def main():
                     "SID": q[1],
                     "Filename": os.path.split(filename)[-1],
                     "Date": timestamp,
-                    "Late": late
+                    "Late": late,
+                    "OriginalName": q[7]
                 },
                 "Date": datetime.strptime(str(q[6]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
                 "Score": q[2],

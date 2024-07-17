@@ -29,11 +29,11 @@ def main():
                 CLS.ClassID,
                 CLS.SchoolYear,
                 CLS.Thumbnail,
-                USR.Name
+                USR.Name,
+                CLS.Archive
             FROM
                 class CLS
-                INNER JOIN classeditor CET ON CET.CSYID = CLS.CSYID 
-                INNER JOIN user USR ON USR.Email = CET.Email 
+                INNER JOIN user USR ON USR.Email = CLS.ClassCreator
             WHERE 
                 CLS.CSYID = %s
         """
@@ -49,7 +49,7 @@ def main():
         # Convert the result to the desired structure
         transformed_data = {}
 
-        CNA, CID, CSY, CTN, PFS = data[0]
+        CNA, CID, CSY, CTN, PFS, ACH = data[0]
 
         return jsonify(
             {
@@ -57,7 +57,8 @@ def main():
                 "ClassID": CID,
                 "ClassYear": CSY,
                 "Thumbnail": CTN,
-                "Instructor": PFS
+                "Instructor": PFS,
+                "Archive": bool(ACH)
             }
         )
 

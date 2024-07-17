@@ -118,12 +118,17 @@ def main():
         result = cursor.fetchall()
 
         addfiles = [row[0] for row in result]
+
+        select_query = "SELECT Lab FROM lab WHERE LID = %s"
+        cursor.execute(select_query, (LID,))
+        resultLab = cursor.fetchone()
         
         # Path = <CSYID>/<LID>/TurnIn/(filename)
 
         if uploaded_file.filename != "":
-            filename = secure_filename(uploaded_file.filename)        
-            filename = f"{UID}-L{LID}-Q{fQID}-{CSYID}{os.path.splitext(uploaded_file.filename)[1]}"
+            filename = secure_filename(uploaded_file.filename)     
+            OriginalFileName = filename 
+            filename = f"{UID}-L{resultLab[0]}-Q{fQID}{os.path.splitext(uploaded_file.filename)[1]}"
 
             # Check and create directories if they don't exist
             smtdirec = os.path.join(UPLOAD_FOLDER, str(CSYID), str(LID), 'TurnIn')
@@ -180,10 +185,10 @@ def main():
 
             # Insert the new submission record
             insert_query = """
-                INSERT INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID, OriginalName)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(insert_query, (UID, LID, QID, filepath, Score, upload_time, CSYID))
+            cursor.execute(insert_query, (UID, LID, QID, filepath, Score, upload_time, CSYID, OriginalFileName))
             conn.commit()
 
             return jsonify({

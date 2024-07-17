@@ -20,20 +20,21 @@ def main():
                 SCT.Section,
                 CLS.SchoolYear,
                 CLS.Thumbnail,
-                CLS.ClassCreator,
-                1 as ClassRole,
+                CREATOR_USR.Name AS Instructor,
                 CLS.CSYID
             FROM
                 class CLS
                 INNER JOIN section SCT ON SCT.CSYID = CLS.CSYID
                 INNER JOIN student STD ON STD.CID = SCT.CID
                 INNER JOIN user USR ON USR.UID = STD.UID
-                LEFT JOIN classeditor CET ON CET.CSYID = CLS.CSYID AND CET.Email = USR.Email
+                INNER JOIN user CREATOR_USR ON CREATOR_USR.Email = CLS.ClassCreator
             WHERE 
                 USR.UID = %s
-                AND Section <> 0
+                AND SCT.Section <> 0
+                AND CLS.Archive = 0
             ORDER BY
-                SchoolYear DESC,ClassName ASC;
+                CLS.SchoolYear DESC,
+                CLS.ClassName ASC;
         """
 
         # Execute a SELECT statement
@@ -47,13 +48,14 @@ def main():
         ### sort by schoolyear
         transformed_data = {}
         for row in data:
-            cid, name, class_id, section, school_year, thumbnail, classcreator, classrole, csyid = row
+            cid, name, class_id, section, school_year, thumbnail, PFS, csyid = row
             class_info = {
                 "ClassID": class_id,
                 "ClassName": name,
                 "ID": csyid,
                 "Section": section,
-                "Thumbnail": thumbnail
+                "Thumbnail": thumbnail,
+                "Instructor": PFS
             }
             if school_year not in transformed_data:
                 transformed_data[school_year] = [class_info]

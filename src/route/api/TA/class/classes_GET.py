@@ -16,14 +16,17 @@ def main():
                 CLS.ClassName,
                 CLS.ClassID,
                 CLS.SchoolYear,
-                CLS.Thumbnail
+                CLS.Thumbnail,
+                CREATOR_USR.Name AS Instructor,
+                CLS.Archive
             FROM
                 class CLS
-                INNER JOIN classeditor CET ON CET.CSYID = CLS.CSYID 
+                INNER JOIN classeditor CET ON CET.CSYID = CLS.CSYID
+                INNER JOIN user CREATOR_USR ON CREATOR_USR.Email = CLS.ClassCreator
             WHERE 
                 CET.Email = %s
             ORDER BY
-                SchoolYear DESC;
+                CLS.SchoolYear DESC;
         """
 
         # Execute a SELECT statement
@@ -38,12 +41,14 @@ def main():
         transformed_data = {}
 
         for row in data:
-            csyid, classname, classid, schoolyear, thumbnail = row
+            csyid, classname, classid, schoolyear, thumbnail, PFS, Archive = row
             class_info = {
                 'ID': csyid,
                 'ClassName': classname,
                 'ClassID': classid,
-                'Thumbnail': thumbnail if thumbnail else None
+                'Thumbnail': thumbnail if thumbnail else None,
+                'Archive': bool(Archive),
+                'Instructor': PFS
             }
             if schoolyear not in transformed_data:
                 transformed_data[schoolyear] = [class_info]

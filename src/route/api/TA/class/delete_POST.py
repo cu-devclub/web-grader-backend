@@ -13,6 +13,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 @jwt_required()
 def main():
+    return jsonify({
+        'success': False,
+        'msg': '',
+        'data': {}
+    })
     Email = get_jwt_identity()['email']
     CSYID = request.form.get('CSYID')
     
