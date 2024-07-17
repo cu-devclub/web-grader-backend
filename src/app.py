@@ -39,7 +39,7 @@ app = Flask(__name__)
 
 isDev = config['DEV'].lower() == "true"
 if not isDev:
-    CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "https://grader.mycourseville.com"}})
+    CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": config['DOMAIN']}})
 else: 
     CORS(app, supports_credentials=True)
 
