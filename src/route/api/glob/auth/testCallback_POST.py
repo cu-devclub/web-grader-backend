@@ -10,6 +10,12 @@ from flask_jwt_extended import create_access_token, set_access_cookies, get_csrf
 regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
 
 def main():
+    return jsonify({
+        'success': False,
+        'msg': '',
+        'data': {}
+    })
+
     DataJ = request.get_json()
 
 
