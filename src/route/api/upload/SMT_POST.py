@@ -174,7 +174,7 @@ def main():
             if existing_row:
                 # Delete the existing file and row
                 existing_file = existing_row[0]
-                delete_file(existing_file)
+                # delete_file(existing_file)
 
                 delete_query = """
                     DELETE FROM submitted
