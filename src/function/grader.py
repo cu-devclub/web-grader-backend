@@ -60,7 +60,7 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
     testerL = ""
     n = 0
     for i in range(len(codeCell)):
-        if (codeCell[i]["metadata"]["nbgrader"]["solution"] == False) and (codeCell[i]["metadata"]["nbgrader"].get("points") == None) and len(codeCell[i]["source"]) >= 5:
+        if (codeCell[i]["metadata"]["nbgrader"]["solution"] == False) and (codeCell[i]["metadata"]["nbgrader"].get("points") == None) and "mock_stdout.getvalue()" in "".join(codeCell[i]["source"]):
             n = i
             testerL = "".join(codeCell[i]["source"])
 
