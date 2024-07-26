@@ -89,6 +89,7 @@ def main():
 
                     # Fetch GID for group
                     if group not in ['', '-']:
+                        cursor.execute("UPDATE class SET useGroup=%s WHERE CSYID=%s", (1, CSYID))
                         cursor.execute("SELECT GID FROM `group` WHERE CSYID=%s AND `Group`=%s", (CSYID, group))
                         group_data = cursor.fetchone()
                         if group_data:
@@ -98,6 +99,7 @@ def main():
                             GID = cursor.lastrowid
                     else:
                         GID = None
+                        cursor.execute("UPDATE class SET useGroup=%s WHERE CSYID=%s", (0, CSYID))
 
                     # insert user to grader
                     AddUserGrader(connection, cursor, student_id, student_id + "@student.chula.ac.th", student_Name)

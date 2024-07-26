@@ -6,6 +6,14 @@ def main():
     cursor = conn.cursor()
     
     CSYID = request.args.get("CSYID")
+
+    pre_query = """SELECT useGroup FROM class WHERE CSYID = %s"""
+    cursor.execute(section_query, (CSYID,))
+    data = cursor.fetchone()
+    if bool(data[0]):
+        return jsonify([])
+
+
     section_query = """SELECT GRP.Group FROM `group` GRP WHERE GRP.CSYID = %s"""
     cursor.execute(section_query, (CSYID,))
     data = cursor.fetchall()
