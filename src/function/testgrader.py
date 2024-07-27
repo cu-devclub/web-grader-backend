@@ -6,129 +6,103 @@ from contextlib import redirect_stdout
 import stopit
 
 def __filter_escapes(string):
-    string = (
-    string
-        .replace('\n', '')  # Newline
-        .replace('\r', '')  # Carriage return
-        .replace('\t', '')  # Tab
-        .replace('\b', '')  # Backspace
-        .replace('\f', '')  # Form feed
-        .replace('\a', '')  # Alert sound
-        .replace('\\', '')  # Literal backslash
-    )
-    return string
+    return string.translate(str.maketrans({
+        '\n': '', '\r': '', '\t': '', '\b': '', '\f': '', '\a': '', '\\': ''
+    }))
 
-# Validation by nbgrader
 def __validate(filename):
-    cmd = f'python -m nbgrader validate {filename}'
-    temp_f = StringIO()
-    with redirect_stdout(temp_f):
-        res = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
-    out = __filter_escapes(res.stdout.decode("utf-8"))
-    if(out == "" or out.startswith("THE CONTENTS ")):
-        return False
-    else:
-        return True
-    
-# Public grade method    
+    cmd = ['python', '-m', 'nbgrader', 'validate', filename]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE)
+    output = __filter_escapes(result.stdout.decode("utf-8"))
+    return not (output == "" or output.startswith("THE CONTENTS "))
+
 def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword="True"):
-    # Validating submittion
-    if validate:
-        if not __validate(submit): return True, "This file is not pass validation."
+    if validate and not __validate(submit):
+        return True, "This file is not pass validation."
 
-    # Read submited file
-    with open(submit, "r", encoding= "utf-8") as f:
-        submitfile = json.loads(f.read())
- 
-    # Filter code cell
-    codeCell = [i for i in submitfile["cells"] if (i.get("cell_type") == "code" and i["metadata"].get("nbgrader") != None)]
+    try:
+        with open(submit, "r", encoding="utf-8") as f:
+            submitfile = json.load(f)
+        
+        code_cells = [
+            cell for cell in submitfile["cells"] 
+            if cell.get("cell_type") == "code" and "nbgrader" in cell["metadata"]
+        ]
 
-    # Get solution cell
-    solution = []
-    solutionLocation = []
-    for i in range(len(codeCell)):
-        if codeCell[i]["metadata"]["nbgrader"]["solution"]:
-            solution.append(codeCell[i]["source"])
-            solutionLocation.append(i)
+        solution_cells = [
+            (i, cell["source"]) for i, cell in enumerate(code_cells) 
+            if cell["metadata"]["nbgrader"].get("solution")
+        ]
 
-    # Write method protection
-    for i in range(len(solution)):
-        for j in range(len(solution[i])):
-            if ".write(" in solution[i][j]: return True, "This file contain file write method it may broke the additional assignment files"
+        for _, solution in solution_cells:
+            for line in solution:
+                if ".write(" in line:
+                    return True, "This file contains file write method, it may break the additional assignment files"
 
-    # Tester Location
-    testerL = ""
-    n = 0
-    for i in range(len(codeCell)):
-        if (codeCell[i]["metadata"]["nbgrader"]["solution"] == False) and (codeCell[i]["metadata"]["nbgrader"].get("points") == None) and "mock_stdout.getvalue()" in "".join(codeCell[i]["source"]):
-            n = i
-            testerL = "".join(codeCell[i]["source"])
+        tester_index, tester_code = next(
+            ((i, "".join(cell["source"])) for i, cell in enumerate(code_cells) 
+             if not cell["metadata"]["nbgrader"].get("solution") 
+             and cell["metadata"]["nbgrader"].get("points") is None 
+             and "mock_stdout.getvalue()" in "".join(cell["source"])),
+            (None, None)
+        )
 
-    # s
-    testcaseL = []
-    pointsL = []
-    isOn = False
-    temp = []
-    for i in range(len(codeCell)):
-        if (codeCell[i]["metadata"]["nbgrader"]["solution"] == False) and (codeCell[i]["metadata"]["nbgrader"].get("points") != None):
-            if not isOn:
-                isOn = not isOn
-            pointsL.append(codeCell[i]["metadata"]["nbgrader"].get("points"))
-            temp.append(i)
-        else:
-            if isOn:
-                testcaseL.append(temp)
-                temp = []
-                isOn = not isOn
-                continue
-        if i == len(codeCell)-1:
-            testcaseL.append(temp)
-            temp = []
+        testcase_locations = []
+        points_list = []
+        temp_locations = []
 
-    # Read question file
-    with open(Question, "r", encoding= "utf-8") as f:
-        Qfile = json.loads(f.read())
+        for i, cell in enumerate(code_cells):
+            if cell["metadata"]["nbgrader"].get("points") is not None:
+                points_list.append(cell["metadata"]["nbgrader"].get("points"))
+                temp_locations.append(i)
+            elif temp_locations:
+                testcase_locations.append(temp_locations)
+                temp_locations = []
 
-    # Filter code cell
-    ScodeCell = [i["source"] for i in Qfile["cells"] if i.get("cell_type") == "code"]
-    
-    #check number of testcase list and solution
-    if len(testcaseL) != len(solutionLocation):
-        return True, f"Number of testcase and solution is not match. ({len(testcaseL)} testcase with {len(solutionLocation)} solution)"
-    
-    score = []
-    num = 0
-    for i in range(len(solutionLocation)):
-        temp_max_p = 0
-        temp_cor_p = 0
-        for j in testcaseL[i]:
-            temp_max_p += pointsL[num]
-            test = "".join(ScodeCell[j])
-            if(len(addfile) != 0):
-                for k in addfile:
-                    x = k.split("/")
-                    test = test.replace(x[-1], k)
-            try:
-                if(n == 0):
-                    finalexec = [testerL, "".join(solution[i]), test]
-                else:
-                    finalexec = ["".join(solution[i]), testerL, test]
-                f = StringIO()
+        if temp_locations:
+            testcase_locations.append(temp_locations)
 
-                with stopit.ThreadingTimeout(timeout) as context_manager:
-                    with redirect_stdout(f):
-                        exec("\n\n".join(finalexec), {})
-                if context_manager.state == context_manager.TIMED_OUT:
-                    return True, f"This submittion have stuck in loop that run longer than {timeout} seconds"
-                s = f.getvalue().strip("\n").split("\n")
-                p = True
-                for k in s:
-                    if(k != check_keyword):
-                        p = False
-                        break
-                if(p): temp_cor_p += pointsL[num]
-            except Exception:
-                pass
-            num += 1
-        score.append([temp_cor_p, temp_max_p])
-    return False, score
+        with open(Question, "r", encoding="utf-8") as f:
+            question_file = json.load(f)
+        
+        question_code_cells = [
+            "".join(cell["source"]) for cell in question_file["cells"] 
+            if cell.get("cell_type") == "code"
+        ]
+
+        if len(testcase_locations) != len(solution_cells):
+            return True, f"Number of testcase and solution is not match. ({len(testcase_locations)} testcase with {len(solution_cells)} solution)"
+
+        scores = []
+        for sol_index, solution in solution_cells:
+            max_points = 0
+            correct_points = 0
+            for testcase_index in testcase_locations[sol_index]:
+                max_points += points_list[testcase_index]
+                test_code = question_code_cells[testcase_index]
+                for filepath in addfile:
+                    test_code = test_code.replace(filepath.split("/")[-1], filepath)
+                try:
+                    exec_code = [tester_code, solution, test_code] if tester_index is None else [solution, tester_code, test_code]
+                    output_buffer = StringIO()
+
+                    with stopit.ThreadingTimeout(timeout) as context_manager:
+                        with redirect_stdout(output_buffer):
+                            exec("\n\n".join(exec_code), {})
+                    
+                    if context_manager.state == context_manager.TIMED_OUT:
+                        return True, f"This submission got stuck in a loop running longer than {timeout} seconds"
+
+                    output_lines = output_buffer.getvalue().strip("\n").split("\n")
+                    if all(line == check_keyword for line in output_lines):
+                        correct_points += points_list[testcase_index]
+                except Exception:
+                    traceback.print_exc()
+                    continue
+
+            scores.append([correct_points, max_points])
+
+        return False, scores
+    except Exception as e:
+        traceback.print_exc()
+        return True, f"An error occurred: {e}"
