@@ -40,7 +40,7 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
                     return True, "This file contains file write method, it may break the additional assignment files"
 
         tester_index, tester_code = next(
-            ((i, cell["source"]) for i, cell in enumerate(code_cells)
+            ((i, "".join(cell["source"])) for i, cell in enumerate(code_cells)
              if not cell["metadata"]["nbgrader"].get("solution")
              and cell["metadata"]["nbgrader"].get("points") is None
              and "mock_stdout.getvalue()" in "".join(cell["source"])),
@@ -79,14 +79,20 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
             max_points = 0
             correct_points = 0
             for testcase_index in testcase_locations[sol_index]:
+                if testcase_index >= len(points_list):
+                    return True, f"Testcase index {testcase_index} out of range for points list."
+
                 max_points += points_list[testcase_index]
                 test_code = question_code_cells[testcase_index]
                 for filepath in addfile:
                     test_code = test_code.replace(filepath.split("/")[-1], filepath)
                 try:
-                    exec_code = "\n\n".join(
-                        [solution_code, tester_code, test_code] if tester_index is not None else [solution_code, test_code]
-                    )
+                    exec_code = [
+                        tester_code, solution_code, test_code
+                    ] if tester_index is not None else [
+                        solution_code, test_code
+                    ]
+                    exec_code = "\n\n".join(exec_code)  # Join the code parts to a single string
                     output_buffer = StringIO()
 
                     with stopit.ThreadingTimeout(timeout) as context_manager:

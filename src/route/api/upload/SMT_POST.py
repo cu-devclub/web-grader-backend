@@ -185,7 +185,7 @@ def main():
 
             # Insert the new submission record
             insert_query = """
-                INSERT INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID, OriginalName)
+                INSERT IGNORE INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID, OriginalName)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(insert_query, (UID, LID, QID, filepath, Score, upload_time, CSYID, OriginalFileName))

@@ -21,22 +21,22 @@ def delete_file(file_path):
 def main():
     conn = get_db()
     cursor = conn.cursor()
-
+    
     Email = request.form.get("Email")
     UID = Email.split('@')[0]
-    uploaded_file = request.files.get("file")
+    uploaded_file = request.files["file"]
     QID = request.form.get("QID")
 
     upload_time = datetime.now(gmt_timezone)
     
-    if not uploaded_file or not isIPYNB(uploaded_file.filename):
+    if not isIPYNB(uploaded_file.filename):
         return jsonify({
             'success': False,
             'msg': 'Upload file must be .ipynb',
             'data': {}
         }), 500
-
-    if not QID:
+    
+    if QID is None:
         return jsonify({
             'success': False,
             'msg': "QID is missing in the request",
@@ -44,9 +44,10 @@ def main():
         }), 500
 
     try:
-        # Use prepared statements to prevent SQL injection
+
         query = """
-            SELECT CASE 
+            SELECT 
+                CASE 
                     WHEN EXISTS (
                         SELECT 1
                         FROM user u
@@ -58,26 +59,41 @@ def main():
                             JSON_CONTAINS(l.CID, CAST(s.CID AS JSON), '$')
                             OR JSON_CONTAINS(l.GID, CAST(s.GID AS JSON), '$')
                         )
-                    ) THEN 1 ELSE 0 
-                   END AS access;
+                    ) 
+                    THEN 1 
+                    ELSE 0 
+                END AS access;
         """
         cursor.execute(query, (Email, QID))
+        # Fetch access result
         data = cursor.fetchone()
 
-        if not data or not bool(int(data[0])):
+        if not bool(int(data[0])):
             return jsonify({
                 'success': False,
                 'msg': "You don't have permission to this question",
                 'data': {}
             }), 500
 
-        select_query = """
-            SELECT LID, QID, CSYID, SourcePath, MaxScore 
-            FROM question 
-            WHERE QID = %s
-        """
+
+
+
+        # Query to select LID, QID, and CSYID from question where QID = %s
+        select_query = "SELECT LID, QID, CSYID, SourcePath, MaxScore FROM question WHERE QID = %s"
         cursor.execute(select_query, (QID,))
         result = cursor.fetchone()
+
+        if isLock(conn, cursor, result[0]):
+            return jsonify({
+                'success': False,
+                'msg': 'This question is no longer accepting answers.',
+                'data': {}
+            }), 500
+
+
+        q_query = "SELECT QID FROM question WHERE LID = %s"
+        cursor.execute(q_query, (result[0],))
+        q = cursor.fetchall()
 
         if not result:
             return jsonify({
@@ -86,45 +102,38 @@ def main():
                 'data': {}
             }), 500
 
-        LID, QID, CSYID, Source, MaxScore = result
+        LID = result[0]
+        fQID = q.index((result[1],))+1
+        QID = result[1]
+        CSYID = result[2]
+        Source = result[3]
+        MaxScore = result[4]
 
-        if isLock(conn, cursor, LID):
-            return jsonify({
-                'success': False,
-                'msg': 'This question is no longer accepting answers.',
-                'data': {}
-            }), 500
+        # Query to select additional files (addfile) paths related to LID
+        select_query = "SELECT Path FROM addfile WHERE LID = %s"
+        cursor.execute(select_query, (LID,))
+        result = cursor.fetchall()
 
-        q_query = "SELECT QID FROM question WHERE LID = %s"
-        cursor.execute(q_query, (LID,))
-        q = cursor.fetchall()
+        addfiles = [row[0] for row in result]
 
-        fQID = q.index((QID,)) + 1
-
-        addfiles_query = "SELECT Path FROM addfile WHERE LID = %s"
-        cursor.execute(addfiles_query, (LID,))
-        addfiles = [row[0] for row in cursor.fetchall()]
-
-        lab_query = "SELECT Lab FROM lab WHERE LID = %s"
-        cursor.execute(lab_query, (LID,))
+        select_query = "SELECT Lab FROM lab WHERE LID = %s"
+        cursor.execute(select_query, (LID,))
         resultLab = cursor.fetchone()
-
-        if not resultLab:
-            return jsonify({
-                'success': False,
-                'msg': 'Lab information not found.',
-                'data': {}
-            }), 500
+        
+        # Path = <CSYID>/<LID>/TurnIn/(filename)
 
         if uploaded_file.filename != "":
-            filename = secure_filename(uploaded_file.filename)
-            OriginalFileName = filename
+            filename = secure_filename(uploaded_file.filename)     
+            OriginalFileName = filename 
             filename = f"{UID}-L{resultLab[0]}-Q{fQID}{os.path.splitext(uploaded_file.filename)[1]}"
 
+            # Check and create directories if they don't exist
             smtdirec = os.path.join(UPLOAD_FOLDER, str(CSYID), str(LID), 'TurnIn')
-            os.makedirs(smtdirec, exist_ok=True)
+            if not os.path.exists(smtdirec):
+                os.makedirs(smtdirec)
 
             filepath = os.path.join(smtdirec, filename)
+
             uploaded_file.save(filepath)
 
             err, data = grader.grade(Source, filepath, addfile=addfiles, validate=False, check_keyword="ok")
@@ -134,33 +143,44 @@ def main():
                     'msg': f'There is a problem while grading.\n{data}',
                     'data': {}
                 }), 500
-
+            
             s, m = 0, 0
-            for score, max_score in data:
-                s += float(score)
-                m += float(max_score)
 
-            Score = float("{:.2f}".format((s / m) * float(MaxScore))) if m != 0 else 0
+            if len(data) == 1:
+                s += float(data[0][0])  # Ensure data is converted to float
+                m += float(data[0][1])  # Ensure data is converted to float
+            else:
+                for j in range(len(data)):
+                    s += float(data[j][0])  # Ensure data is converted to float
+                    m += float(data[j][1])  # Ensure data is converted to float
 
+            # Check if m is zero to avoid division by zero
+            if m == 0:
+                Score = 0
+            else:
+                Score = float("{:.2f}".format((s / m) * float(MaxScore)))  # Ensure MaxScore is converted to float
+
+            # Check if a submission already exists for this UID, LID, QID, CSYID
             select_query = """
-                SELECT SummitedFile 
-                FROM submitted 
+                SELECT SummitedFile FROM submitted
                 WHERE UID = %s AND LID = %s AND QID = %s AND CSYID = %s
             """
             cursor.execute(select_query, (UID, LID, QID, CSYID))
             existing_row = cursor.fetchone()
 
             if existing_row:
+                # Delete the existing file and row
                 existing_file = existing_row[0]
-                delete_file(existing_file)
+                # delete_file(existing_file)
 
                 delete_query = """
-                    DELETE FROM submitted 
+                    DELETE FROM submitted
                     WHERE UID = %s AND LID = %s AND QID = %s AND CSYID = %s
                 """
                 cursor.execute(delete_query, (UID, LID, QID, CSYID))
                 conn.commit()
 
+            # Insert the new submission record
             insert_query = """
                 INSERT IGNORE INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID, OriginalName)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -173,6 +193,7 @@ def main():
                 'msg': "Record inserted successfully",
                 'data': {}
             }), 200
+        
         else:
             return jsonify({
                 'success': False,
@@ -181,9 +202,6 @@ def main():
             }), 500
 
     except Exception as e:
+        # Handle any exceptions during file saving or database operations
         print(f"Error saving file: {e}")
-        return jsonify({
-            'success': False,
-            'msg': 'An error occurred while processing the request.',
-            'data': {}
-        }), 500
+        return jsonify({"message": "An error occurred while processing the request."}), 500
