@@ -8,7 +8,7 @@ from function.db import get_db
 from function.isIPYNB import isIPYNB
 from function.loadconfig import UPLOAD_FOLDER
 from function.isLock import isLock
-import function.grader as grader
+import function.testgrader as grader
 
 gmt_timezone = pytz.timezone('Asia/Bangkok')
 
