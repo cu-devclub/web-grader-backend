@@ -23,14 +23,14 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
     try:
         with open(submit, "r", encoding="utf-8") as f:
             submitfile = json.load(f)
-        
+
         code_cells = [
-            cell for cell in submitfile["cells"] 
+            cell for cell in submitfile["cells"]
             if cell.get("cell_type") == "code" and "nbgrader" in cell["metadata"]
         ]
 
         solution_cells = [
-            (i, cell["source"]) for i, cell in enumerate(code_cells) 
+            (i, cell["source"]) for i, cell in enumerate(code_cells)
             if cell["metadata"]["nbgrader"].get("solution")
         ]
 
@@ -40,9 +40,9 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
                     return True, "This file contains file write method, it may break the additional assignment files"
 
         tester_index, tester_code = next(
-            ((i, "".join(cell["source"])) for i, cell in enumerate(code_cells) 
-             if not cell["metadata"]["nbgrader"].get("solution") 
-             and cell["metadata"]["nbgrader"].get("points") is None 
+            ((i, cell["source"]) for i, cell in enumerate(code_cells)
+             if not cell["metadata"]["nbgrader"].get("solution")
+             and cell["metadata"]["nbgrader"].get("points") is None
              and "mock_stdout.getvalue()" in "".join(cell["source"])),
             (None, None)
         )
@@ -64,9 +64,9 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
 
         with open(Question, "r", encoding="utf-8") as f:
             question_file = json.load(f)
-        
+
         question_code_cells = [
-            "".join(cell["source"]) for cell in question_file["cells"] 
+            "".join(cell["source"]) for cell in question_file["cells"]
             if cell.get("cell_type") == "code"
         ]
 
@@ -75,6 +75,7 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
 
         scores = []
         for sol_index, solution in solution_cells:
+            solution_code = "\n\n".join(solution)  # Ensure solution code is a single string
             max_points = 0
             correct_points = 0
             for testcase_index in testcase_locations[sol_index]:
@@ -83,20 +84,22 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
                 for filepath in addfile:
                     test_code = test_code.replace(filepath.split("/")[-1], filepath)
                 try:
-                    exec_code = [tester_code, solution, test_code] if tester_index is None else [solution, tester_code, test_code]
+                    exec_code = "\n\n".join(
+                        [solution_code, tester_code, test_code] if tester_index is not None else [solution_code, test_code]
+                    )
                     output_buffer = StringIO()
 
                     with stopit.ThreadingTimeout(timeout) as context_manager:
                         with redirect_stdout(output_buffer):
-                            exec("\n\n".join(exec_code), {})
-                    
+                            exec(exec_code, {})
+
                     if context_manager.state == context_manager.TIMED_OUT:
                         return True, f"This submission got stuck in a loop running longer than {timeout} seconds"
 
                     output_lines = output_buffer.getvalue().strip("\n").split("\n")
                     if all(line == check_keyword for line in output_lines):
                         correct_points += points_list[testcase_index]
-                except Exception:
+                except Exception as e:
                     traceback.print_exc()
                     continue
 
