@@ -1,12 +1,12 @@
-name: API
+name: API-test
 
 on:
   push:
-    branches: [main, testing, latest]
+    branches: [testing]
     paths: [src/**]
     tags: [ v* ]
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [closed]
     paths: [src/**]
 
 env:
@@ -18,7 +18,7 @@ env:
 jobs:
   docker:
     # Ensures that docker action will not run on pull requests in draft state
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.merged == true && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,17 +31,17 @@ jobs:
         name: Make ENVFILE
         uses: SpicyPizza/create-envfile@v2.0
         with:
-          envkey_JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-          envkey_HOST: ${{ secrets.HOST }}
-          envkey_PORT: ${{ secrets.PORT }}
-          envkey_dev: ${{ secrets.DEV }}
-          envkey_DBHOST: ${{ secrets.DBHOST }}
-          envkey_DBUSER: ${{ secrets.DBUSER }}
-          envkey_DBPASS: ${{ secrets.DBPASS }}
-          envkey_DBNAME: ${{ secrets.DBNAME }}
-          envkey_DOMAIN: ${{ secrets.DOMAIN }}
-          envkey_PUBKEY: ${{ secrets.PUBKEY }}
-          envkey_PRIKEY: ${{ secrets.PRIKEY }}
+          envkey_JWT_SECRET_KEY: ${{ secrets.TEST_JWT_SECRET_KEY }}
+          envkey_HOST: ${{ secrets.TEST_HOST }}
+          envkey_PORT: ${{ secrets.TEST_PORT }}
+          envkey_dev: ${{ secrets.TEST_DEV }}
+          envkey_DBHOST: ${{ secrets.TEST_DBHOST }}
+          envkey_DBUSER: ${{ secrets.TEST_DBUSER }}
+          envkey_DBPASS: ${{ secrets.TEST_DBPASS }}
+          envkey_DBNAME: ${{ secrets.TEST_DBNAME }}
+          envkey_DOMAIN: ${{ secrets.TEST_DOMAIN }}
+          envkey_PUBKEY: ${{ secrets.TEST_PUBKEY }}
+          envkey_PRIKEY: ${{ secrets.TEST_PRIKEY }}
           file_name: .env
           directory: ./src/config/
       -
@@ -50,7 +50,7 @@ jobs:
         uses: jsdaniell/create-json@v1.2.2
         with:
           name: "client_secrets.json"
-          json: ${{ secrets.CLIENT_SECRETS }}
+          json: ${{ secrets.TEST_CLIENT_SECRETS }}
           dir: 'src/config/'
       -
         name: Set up QEMU
@@ -79,10 +79,6 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          # Username and Password for DOCKER HUB
-          #username: ${{ secrets.DOCKERHUB_USERNAME }}
-          #password: ${{ secrets.DOCKERHUB_TOKEN }}
-          # Username and Password for GITHUB CONTAINER REGISTRY
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       -

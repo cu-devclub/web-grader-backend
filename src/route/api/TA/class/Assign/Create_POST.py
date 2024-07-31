@@ -46,7 +46,7 @@ def main():
         GCID = "GID" if (form["IsGroup"] == 'true') else "CID"
 
         addLab = f"INSERT INTO lab (Lab, Name, Publish, Due, `Lock`, showScoreOnLock, {GCID}, CSYID, Creator) VALUES " + "(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(addLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], LockOnDue, form["ShowOnLock"], str(seleted).replace(" ", ""), form["CSYID"], Email))
+        cursor.execute(addLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], LockOnDue, 1 if form["ShowOnLock"] == 'true' else 0, str(seleted).replace(" ", ""), form["CSYID"], Email))
         conn.commit()
 
         LID = str(cursor.lastrowid)

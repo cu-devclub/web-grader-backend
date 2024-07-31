@@ -215,7 +215,7 @@ def main():
                     `Timestamp` = VALUES(Timestamp)
             """
 
-            cursor.execute(sus_query, (UID, LID, QID, 3, f"Owner of this file is {decrypted_message.split("_")[0]}.", upload_time))
+            cursor.execute(sus_query, (UID, LID, QID, 3, f"Owner of this file is {decrypted_message.split('_')[0]}.", upload_time))
             conn.commit()
 
         elif LID != int(DMS[1]) or QID != int(DMS[2]):
