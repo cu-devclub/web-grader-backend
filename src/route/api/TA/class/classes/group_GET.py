@@ -8,9 +8,9 @@ def main():
     CSYID = request.args.get("CSYID")
 
     pre_query = """SELECT useGroup FROM class WHERE CSYID = %s"""
-    cursor.execute(section_query, (CSYID,))
+    cursor.execute(pre_query, (CSYID,))
     data = cursor.fetchone()
-    if bool(data[0]):
+    if not bool(data[0]):
         return jsonify([])
 
 

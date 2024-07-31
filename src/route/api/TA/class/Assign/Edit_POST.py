@@ -115,18 +115,6 @@ def main():
         
         seleted = [GetGID(conn, cursor, i, form["CSYID"]) if (form["IsGroup"] == 'true') else GetCID(conn, cursor, i, form["CSYID"]) for i in form["Selected"].split(",")]
 
-        lock_query = """
-            SELECT
-                `Lock`
-            FROM 
-                lab
-            WHERE 
-                LID = %s
-        """
-        
-        cursor.execute(lock_query, (form["LID"],))
-        Lock = cursor.fetchone()
-
         GCID = "GID" if (form["IsGroup"] == 'true') else "CID"
         setLab = """
             UPDATE 
@@ -137,11 +125,12 @@ def main():
                 Publish = %s,
                 Due = %s,
                 `Lock` = %s,
+                showScoreOnLock = %s,
                 """ + GCID + """ = %s
             WHERE 
                 LID = %s;
         """
-        cursor.execute(setLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], form["DueDate"] if form["LOD"] == 'true' else Lock[0], str(seleted).replace(" ", ""), form["LID"]))
+        cursor.execute(setLab, (form["LabNum"], form["LabName"], form["PubDate"], form["DueDate"], form["DueDate"] if form["LOD"] == 'true' else None, 1 if form["ShowOnLock"] == 'true' else 0, str(seleted).replace(" ", ""), form["LID"]))
         conn.commit()
 
         LID = form["LID"]

@@ -56,11 +56,11 @@ def main():
         if not isLock(conn, cursor, LID):
             query_update = "UPDATE lab SET `Lock` = %s WHERE LID = %s"
             update_data = (current_time, LID)
-            msg = "Closed "
+            msg = " closed."
         else:
             query_update = "UPDATE lab SET `Lock` = NULL WHERE LID = %s"
             update_data = (LID,)
-            msg = "Opened "
+            msg = " opened."
 
         # Execute update query
         cursor.execute(query_update, update_data)
@@ -68,7 +68,7 @@ def main():
 
         response = {
             "success": True,
-            "msg": msg + "assignment.",
+            "msg": "Assignment" + msg,
             "data": {}
         }
 

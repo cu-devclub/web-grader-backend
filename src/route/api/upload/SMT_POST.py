@@ -1,14 +1,20 @@
 import os
 import pytz
+import json
 from datetime import datetime
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
 
 from function.db import get_db
 from function.isIPYNB import isIPYNB
-from function.loadconfig import UPLOAD_FOLDER
+from function.loadconfig import UPLOAD_FOLDER, config
 from function.isLock import isLock
 import function.grader as grader
+
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives import serialization
+from binascii import unhexlify
 
 gmt_timezone = pytz.timezone('Asia/Bangkok')
 
@@ -78,9 +84,6 @@ def main():
                 'data': {}
             }), 200
 
-
-
-
         # Query to select LID, QID, and CSYID from question where QID = %s
         select_query = "SELECT LID, QID, CSYID, SourcePath, MaxScore FROM question WHERE QID = %s"
         cursor.execute(select_query, (QID,))
@@ -125,86 +128,170 @@ def main():
         
         # Path = <CSYID>/<LID>/TurnIn/(filename)
 
-        if uploaded_file.filename != "":
-            filename = secure_filename(uploaded_file.filename)     
-            OriginalFileName = filename 
-            filename = f"{UID}-L{resultLab[0]}-Q{fQID}{os.path.splitext(uploaded_file.filename)[1]}"
-
-            # Check and create directories if they don't exist
-            smtdirec = os.path.join(UPLOAD_FOLDER, str(CSYID), str(LID), 'TurnIn')
-            if not os.path.exists(smtdirec):
-                os.makedirs(smtdirec)
-
-            filepath = os.path.join(smtdirec, filename)
-
-            uploaded_file.save(filepath)
-
-            err, data = grader.grade(Source, filepath, addfile=addfiles, validate=False, check_keyword="ok")
-            if err:
-                return jsonify({
-                    'success': False,
-                    'msg': f'There is a problem while grading.\n{data}',
-                    'data': {}
-                }), 200
-            
-            s, m = 0, 0
-
-            if len(data) == 1:
-                s += float(data[0][0])  # Ensure data is converted to float
-                m += float(data[0][1])  # Ensure data is converted to float
-            else:
-                for j in range(len(data)):
-                    s += float(data[j][0])  # Ensure data is converted to float
-                    m += float(data[j][1])  # Ensure data is converted to float
-
-            # Check if m is zero to avoid division by zero
-            if m == 0:
-                Score = 0
-            else:
-                Score = float("{:.2f}".format((s / m) * float(MaxScore)))  # Ensure MaxScore is converted to float
-
-            # Check if a submission already exists for this UID, LID, QID, CSYID
-            select_query = """
-                SELECT SummitedFile FROM submitted
-                WHERE UID = %s AND LID = %s AND QID = %s AND CSYID = %s
-            """
-            cursor.execute(select_query, (UID, LID, QID, CSYID))
-            existing_row = cursor.fetchone()
-
-            if existing_row:
-                # Delete the existing file and row
-                existing_file = existing_row[0]
-                # delete_file(existing_file)
-
-                delete_query = """
-                    DELETE FROM submitted
-                    WHERE UID = %s AND LID = %s AND QID = %s AND CSYID = %s
-                """
-                cursor.execute(delete_query, (UID, LID, QID, CSYID))
-                conn.commit()
-
-            # Insert the new submission record
-            insert_query = """
-                INSERT IGNORE INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID, OriginalName)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(insert_query, (UID, LID, QID, filepath, Score, upload_time, CSYID, OriginalFileName))
-            conn.commit()
-
-            return jsonify({
-                'success': True,
-                'msg': "Record inserted successfully",
-                'data': {}
-            }), 200
-        
-        else:
+        if uploaded_file.filename == "":
             return jsonify({
                 'success': False,
                 'msg': 'No file uploaded.',
                 'data': {}
             }), 400
+        
+        filename = secure_filename(uploaded_file.filename)     
+        OriginalFileName = filename 
+        filename = f"{UID}-L{resultLab[0]}-Q{fQID}{os.path.splitext(uploaded_file.filename)[1]}"
+
+        # Check and create directories if they don't exist
+        smtdirec = os.path.join(UPLOAD_FOLDER, str(CSYID), str(LID), 'TurnIn')
+        if not os.path.exists(smtdirec):
+            os.makedirs(smtdirec)
+
+        filepath = os.path.join(smtdirec, filename)
+
+        uploaded_file.save(filepath)
+
+        encrypted_message_str = None
+        with open(filepath, 'r', encoding='utf-8') as file:
+            try:
+                encrypted_message_str = json.loads(file.read())["metadata"]["BondSan"]
+            except Exception as e:
+                encrypted_message_str = None
+
+
+
+        if encrypted_message_str is not None:
+            try:
+                private_key = serialization.load_pem_private_key(config["PRIKEY"].encode('utf-8'), password=None)
+
+                # Convert the encrypted message back from hex string
+                encrypted_message = unhexlify(encrypted_message_str)
+
+                # Decrypt the message
+                decrypted_message = private_key.decrypt(
+                    encrypted_message,
+                    padding.OAEP(
+                        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                        algorithm=hashes.SHA256(),
+                        label=None
+                    )
+                ).decode("utf-8")
+            except Exception as e:
+                decrypted_message = ""
+
+        if encrypted_message_str is not None:
+            DMS = decrypted_message.split("_")
+
+        if encrypted_message_str is None:
+            sus_query = """
+                INSERT INTO `suspicious` (`UID`, `LID`, `QID`, `Type`, `Message`, `Timestamp`)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    `Message` = VALUES(Message),
+                    `Timestamp` = VALUES(Timestamp)
+            """
+
+            cursor.execute(sus_query, (UID, LID, QID, 1, "File that user upload is not contain signature.", upload_time))
+            conn.commit()
+
+        elif len(DMS) != 3:
+            sus_query = """
+                INSERT INTO `suspicious` (`UID`, `LID`, `QID`, `Type`, `Message`, `Timestamp`)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    `Message` = VALUES(Message),
+                    `Timestamp` = VALUES(Timestamp)
+            """
+
+            cursor.execute(sus_query, (UID, LID, QID, 2, "Signature is not valid.", upload_time))
+            conn.commit()
+
+        elif UID == DMS[0] and LID == int(DMS[1]) and QID == int(DMS[2]):
+            pass
+
+        elif UID != DMS[0]:
+            sus_query = """
+                INSERT INTO `suspicious` (`UID`, `LID`, `QID`, `Type`, `Message`, `Timestamp`)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    `Message` = VALUES(Message),
+                    `Timestamp` = VALUES(Timestamp)
+            """
+
+            cursor.execute(sus_query, (UID, LID, QID, 3, f"Owner of this file is {decrypted_message.split("_")[0]}.", upload_time))
+            conn.commit()
+
+        elif LID != int(DMS[1]) or QID != int(DMS[2]):
+            sus_query = """
+                INSERT INTO `suspicious` (`UID`, `LID`, `QID`, `Type`, `Message`, `Timestamp`)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    `Message` = VALUES(Message),
+                    `Timestamp` = VALUES(Timestamp)
+            """
+
+            cursor.execute(sus_query, (UID, LID, QID, 4, "This signature is from different question.", upload_time))
+            conn.commit()
+
+        else:
+            sus_query = """
+                INSERT INTO `suspicious` (`UID`, `LID`, `QID`, `Type`, `Message`, `Timestamp`)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    `Message` = VALUES(Message),
+                    `Timestamp` = VALUES(Timestamp)
+            """
+
+            cursor.execute(sus_query, (UID, LID, QID, 5, "There is problem with signature.", upload_time))
+            conn.commit()
+            
+
+        err, data = grader.grade(Source, filepath, addfile=addfiles, validate=False, check_keyword="ok")
+        if err:
+            return jsonify({
+                'success': False,
+                'msg': f'There is a problem while grading.\n{data}',
+                'data': {}
+            }), 200
+        
+        s, m = 0, 0
+
+        if len(data) == 1:
+            s += float(data[0][0])  # Ensure data is converted to float
+            m += float(data[0][1])  # Ensure data is converted to float
+        else:
+            for j in range(len(data)):
+                s += float(data[j][0])  # Ensure data is converted to float
+                m += float(data[j][1])  # Ensure data is converted to float
+
+        # Check if m is zero to avoid division by zero
+        if m == 0:
+            Score = 0
+        else:
+            Score = float("{:.2f}".format((s / m) * float(MaxScore)))  # Ensure MaxScore is converted to float
+
+        # Define the insert or update query
+        upsert_query = """
+            INSERT INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID, OriginalName)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                SummitedFile = VALUES(SummitedFile),
+                Score = VALUES(Score),
+                Timestamp = VALUES(Timestamp),
+                OriginalName = VALUES(OriginalName)
+        """
+
+        # Execute the query with the provided values
+        cursor.execute(upsert_query, (UID, LID, QID, filepath, Score, upload_time, CSYID, OriginalFileName))
+        conn.commit()          
+
+        return jsonify({
+            'success': True,
+            'msg': "Record inserted successfully",
+            'data': {}
+        }), 200
 
     except Exception as e:
-        # Handle any exceptions during file saving or database operations
-        print(f"Error saving file: {e}")
-        return jsonify({"message": "An error occurred while processing the request."}), 500
+        print(e)
+        return jsonify({
+            'success': False,
+            'msg': 'Please contact admin.',
+            'data': e
+        }), 200

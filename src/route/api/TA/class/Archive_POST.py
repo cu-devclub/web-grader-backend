@@ -33,17 +33,17 @@ def main():
         msg = ""
         if isArchive(conn, cursor, CSYID):
             query_update = "UPDATE class SET `Archive` = 0 WHERE CSYID = %s"
-            msg = "Unarchived "
+            msg = " unarchived."
         else:
             query_update = "UPDATE class SET `Archive` = 1 WHERE CSYID = %s"
-            msg = "Archived "
+            msg = " archived."
 
         cursor.execute(query_update, (CSYID,))
         conn.commit()    
 
         response = {
             "success": True,
-            "msg": msg + "class.",
+            "msg": "Class" + msg,
             "data": {}
         }
 

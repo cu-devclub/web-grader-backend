@@ -64,8 +64,11 @@ def main():
             WHERE l.LID = %s
         """, (LID,))
         lab_info_row = cur.fetchone()
+
+        lock = isLock(g.db, cur, LID)
+
         lab_info = {
-            "Lock": isLock(g.db, cur, LID),
+            "Lock": lock,
             "Lab": lab_info_row[0],
             "Name": lab_info_row[1],
             "Publish": datetime.strptime(str(lab_info_row[2]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
@@ -78,14 +81,19 @@ def main():
             SELECT 
                 q.QID,
                 COALESCE(s.SID, -1) AS SID,
-                COALESCE(s.Score, 0) AS Score, 
+                CASE 
+                    WHEN l.showScoreOnLock = 1 AND (l.Lock IS NULL OR CONVERT_TZ(NOW(), '+00:00', '+07:00') < l.Lock) THEN 0
+                    ELSE COALESCE(s.Score, 0)
+                END AS Score,
                 q.MaxScore,
                 COALESCE(s.SummitedFile, '') AS Filename,
                 COALESCE(s.Timestamp, '') AS Timestamp,
                 q.LastEdit,
-                COALESCE(s.OriginalName, '') AS OriginalName
+                COALESCE(s.OriginalName, '') AS OriginalName,
+                l.showScoreOnLock
             FROM question q
             LEFT JOIN submitted s ON q.QID = s.QID AND q.LID = s.LID AND s.UID = %s
+            LEFT JOIN lab l ON q.LID = l.LID
             WHERE q.LID = %s
             ORDER BY q.QID
         """, (Email.split('@')[0], LID,))
@@ -108,8 +116,9 @@ def main():
                     "OriginalName": q[7]
                 },
                 "Date": datetime.strptime(str(q[6]), "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M"),
-                "Score": q[2],
-                "Max": int(q[3])
+                "Score": float("{:.2f}".format(q[2])),
+                "Max": int(q[3]),
+                "hideScore": bool(int(q[8])) and not lock
             })
 
         # Fetch addfile information

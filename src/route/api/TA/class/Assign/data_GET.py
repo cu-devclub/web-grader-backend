@@ -53,7 +53,8 @@ def main():
                 CASE
                     WHEN LB.Due = LB.Lock THEN 1
                     ELSE 0
-                END AS LOD
+                END AS LOD,
+                LB.showScoreOnLock
             FROM
                 lab LB
             WHERE 
@@ -131,6 +132,7 @@ def main():
                 "DueDate": data[3].strftime("%Y-%m-%dT%H:%M:%S"),
                 "LOD": bool(data[7]),
                 "Lock": isLock(conn, cursor, LID),
+                "ShowOnLock": bool(int(data[8])),
                 "IsGroup": isGroup,
                 "Selected": [PreSelectList[int(i)] for i in [i for i in newD5.strip("[] ").split(",")]],
                 "SelectList": list(PreSelectList.values()),

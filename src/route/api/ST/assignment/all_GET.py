@@ -1,6 +1,8 @@
 from datetime import datetime
 from flask import request, jsonify, g
+
 from function.isSTD import isSTD
+from function.isLock import isLock
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -30,7 +32,10 @@ def main():
             LAB.Name, 
             LAB.Publish, 
             LAB.Due,
-            COALESCE(SUM(SMT.Score), 0) AS Score,
+            CASE 
+                WHEN LAB.showScoreOnLock = 1 AND (LAB.Lock IS NULL OR CONVERT_TZ(NOW(), '+00:00', '+07:00') < LAB.Lock) THEN 0
+                ELSE COALESCE(SUM(SMT.Score), 0)
+            END AS Score,
             COALESCE(QST.MaxScore, 0) AS MaxScore,
             CASE 
                 WHEN SMT.LatestTimestamp IS NOT NULL THEN TRUE
@@ -39,7 +44,8 @@ def main():
             CASE 
                 WHEN LAB.Due <= IFNULL(SMT.LatestTimestamp, CONVERT_TZ(NOW(), '+00:00', '+07:00')) THEN TRUE
                 ELSE FALSE
-            END AS Late
+            END AS Late,
+            LAB.showScoreOnLock
         FROM 
             lab AS LAB
         JOIN 
@@ -85,10 +91,6 @@ def main():
         # Fetch all rows
         data = cur.fetchall()
 
-        # Close the cursor
-        cur.close()
-
-
         AllLab = []
 
         # Convert the result to the desired structure
@@ -102,8 +104,12 @@ def main():
                 "Score": int(row[5]),
                 "MaxScore": int(row[6]),
                 "TurnIn": bool(row[7]),
-                "Late": bool(row[8])
+                "Late": bool(row[8]),
+                "hideScore": bool(int(row[9])) and not isLock(g.db, cur, row[0])
             })
+
+        # Close the cursor
+        cur.close()
 
         return jsonify({
             'success': True,
