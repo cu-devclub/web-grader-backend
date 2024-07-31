@@ -14,6 +14,9 @@ make .env file
     DBUSER=
     DBPASS=
     DBNAME=
+    DOMAIN=
+    PUBKEY=
+    PRIKEY=
 
 and client_secrets.json (Generate from google api)
 
