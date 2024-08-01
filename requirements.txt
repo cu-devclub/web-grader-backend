@@ -1,5 +1,5 @@
 Flask==3.0.0
-flask_cors==4.0.0
+flask_cors>=4.0.1
 flask-jwt-extended==4.6.0
 PyJWT==2.8.0
 cachetools==5.3.2
@@ -12,5 +12,8 @@ mysqlclient==2.2.1
 colorama==0.4.6
 mysql.connector
 stopit==1.1.2
-pymysql==1.1.0
+pymysql==1.1.1
 pytz
+tabulate
+flask_sslify
+pyOpenSSL
