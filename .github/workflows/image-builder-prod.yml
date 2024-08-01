@@ -6,6 +6,7 @@ on:
     paths: [src/**]
     tags: [ v* ]
   pull_request:
+    branches: [latest]
     types: [closed]
     paths: [src/**]
 
