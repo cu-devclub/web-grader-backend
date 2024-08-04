@@ -85,7 +85,22 @@ def main():
             }), 200
 
         # Query to select LID, QID, and CSYID from question where QID = %s
-        select_query = "SELECT LID, QID, CSYID, SourcePath, MaxScore FROM question WHERE QID = %s"
+        select_query = """
+            SELECT 
+                LID, 
+                QID, 
+                CSYID, 
+                SourcePath, 
+                MaxScore,
+                CASE
+                    WHEN CONVERT_TZ(NOW(), '+00:00', '+07:00') >= LAB.Publish THEN 1
+                    ELSE 0
+                END AS Pub,
+            FROM 
+                question 
+            WHERE 
+                QID = %s
+        """
         cursor.execute(select_query, (QID,))
         result = cursor.fetchone()
 
@@ -93,6 +108,13 @@ def main():
             return jsonify({
                 'success': False,
                 'msg': 'This question is no longer accepting answers.',
+                'data': {}
+            }), 200
+        
+        if(not bool(int(result[5]))):
+            return jsonify({
+                'success': False,
+                'msg': 'This question is not available yet.',
                 'data': {}
             }), 200
 
