@@ -79,7 +79,8 @@ def main():
         ON 
             LAB.LID = QST.LID
         WHERE 
-            LAB.CSYID = %s 
+            LAB.CSYID = %s
+            AND CONVERT_TZ(NOW(), '+00:00', '+07:00') >= LAB.Publish
         GROUP BY 
             LAB.LID, LAB.Lab, LAB.Name, LAB.Publish, LAB.Due
         ORDER BY 
