@@ -1,7 +1,7 @@
 import datetime
 import requests
 import mysql.connector
-from flask import jsonify, request, Response
+from flask import jsonify, request, Response, logging
 
 from google.oauth2 import id_token
 from pip._vendor import cachecontrol
@@ -14,8 +14,8 @@ from function.google import flow, GOOGLE_CLIENT_ID
 
 def main():
     urldict = {x[0] : x[1] for x in [x.split("=") for x in request.json['url'].split("?")[1].split("&") ]}
-    print(request.json['state'])
-    print(urldict["state"])
+    logging.print(request.json['state'], "from client")
+    logging.print(urldict["state"], "from google")
     if not request.json['state'] == urldict["state"]:
         return jsonify({
             'success': False,
@@ -25,7 +25,7 @@ def main():
     try:
         flow.fetch_token(authorization_response=request.json['url'])
     except Exception as e:
-        print(e)
+        logging.print(e, "google response")
         return jsonify({
             'success': False,
             'msg': 'There is problem with google.',
