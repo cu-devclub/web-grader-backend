@@ -100,7 +100,7 @@ def main():
                 question q
                 JOIN lab LAB ON q.LID = LAB.LID
             WHERE 
-                QID = %s
+                q.QID = %s
         """
         cursor.execute(select_query, (QID,))
         result = cursor.fetchone()
