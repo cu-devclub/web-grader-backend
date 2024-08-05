@@ -87,18 +87,18 @@ def main():
         # Query to select LID, QID, and CSYID from question where QID = %s
         select_query = """
             SELECT 
-                LID, 
-                QID, 
-                CSYID, 
-                SourcePath, 
-                MaxScore,
+                q.LID, 
+                q.QID, 
+                q.CSYID, 
+                q.SourcePath, 
+                q.MaxScore,
                 CASE
                     WHEN CONVERT_TZ(NOW(), '+00:00', '+07:00') >= LAB.Publish THEN 1
                     ELSE 0
                 END AS Pub
             FROM 
-                question 
-                JOIN lab LAB ON LID = LAB.LID
+                question q
+                JOIN lab LAB ON q.LID = LAB.LID
             WHERE 
                 QID = %s
         """
