@@ -14,8 +14,6 @@ from function.google import flow, GOOGLE_CLIENT_ID
 
 def main():
     urldict = {x[0] : x[1] for x in [x.split("=") for x in request.json['url'].split("?")[1].split("&") ]}
-    logging.print(request.json['state'], "from client")
-    logging.print(urldict["state"], "from google")
     if not request.json['state'] == urldict["state"]:
         return jsonify({
             'success': False,
@@ -25,7 +23,7 @@ def main():
     try:
         flow.fetch_token(authorization_response=request.json['url'])
     except Exception as e:
-        logging.print(e, "google response")
+        print(e, "google response")
         return jsonify({
             'success': False,
             'msg': 'There is problem with google.',
