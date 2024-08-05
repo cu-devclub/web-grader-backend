@@ -24,6 +24,9 @@ jobs:
       -
         name: Checkout repository
         uses: actions/checkout@v3
+      - 
+        name: Set up the environment
+        run: mkdir -p ./api/src/config
       -
         name: Make ENVFILE
         uses: SpicyPizza/create-envfile@v2.0
@@ -88,7 +91,7 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
-          context: "."
+          context: "./api"
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
