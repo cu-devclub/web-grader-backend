@@ -98,6 +98,7 @@ def main():
                 END AS Pub
             FROM 
                 question 
+                JOIN lab LAB ON LID = LAB.LID
             WHERE 
                 QID = %s
         """
