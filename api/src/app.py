@@ -52,6 +52,8 @@ app.config['JWT_SECRET_KEY'] = config['JWT_SECRET_KEY']
 app.config['JWT_COOKIE_SAMESITE'] = "None"
 app.config['JWT_COOKIE_SECURE'] = True
 
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+
 jwt = JWTManager(app)
 
 # setup google authen

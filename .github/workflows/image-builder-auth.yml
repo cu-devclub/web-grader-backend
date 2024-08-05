@@ -3,11 +3,8 @@ name: API
 on:
   push:
     branches: [main, testing, latest]
-    paths: [src/**]
+    paths: [api/src/**]
     tags: [ v* ]
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
-    paths: [src/**]
 
 env:
   # Use docker.io for Docker Hub (Default) / Use ghcr.io for GitHub Container Registry
@@ -31,19 +28,10 @@ jobs:
         name: Make ENVFILE
         uses: SpicyPizza/create-envfile@v2.0
         with:
-          envkey_JWT_SECRET_KEY: ${{ secrets.PROD_JWT_SECRET_KEY }}
-          envkey_HOST: ${{ secrets.PROD_HOST }}
-          envkey_PORT: ${{ secrets.PROD_PORT }}
-          envkey_dev: ${{ secrets.PROD_DEV }}
-          envkey_DBHOST: ${{ secrets.PROD_DBHOST }}
-          envkey_DBUSER: ${{ secrets.PROD_DBUSER }}
-          envkey_DBPASS: ${{ secrets.PROD_DBPASS }}
-          envkey_DBNAME: ${{ secrets.PROD_DBNAME }}
-          envkey_DOMAIN: ${{ secrets.PROD_DOMAIN }}
+          envkey_COOKIE_SECRET: ${{ secrets.PROD_JWT_SECRET_KEY }}
           envkey_PUBKEY: ${{ secrets.PROD_PUBKEY }}
-          envkey_PRIKEY: ${{ secrets.PROD_PRIKEY }}
           file_name: .env
-          directory: ./src/config/
+          directory: ./auth/
       -
         name: create-json
         id: create-json
@@ -51,7 +39,7 @@ jobs:
         with:
           name: "client_secrets.json"
           json: ${{ secrets.PROD_CLIENT_SECRETS }}
-          dir: 'src/config/'
+          dir: 'auth/'
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,6 +55,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             latest=auto
+            prefix=auth-,onlatest=true
           tags: |
             type=ref,event=branch
             type=ref,event=pr

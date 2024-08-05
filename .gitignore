@@ -9,3 +9,4 @@ src/files/UploadFile/*/
 __pycache__
 test.py
 .DS_Store
+client_secrets.json
