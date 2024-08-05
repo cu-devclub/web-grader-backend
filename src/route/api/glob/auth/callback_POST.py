@@ -26,7 +26,7 @@ def main():
         return jsonify({
             'success': False,
             'msg': 'Authen state does not match',
-            'data': {}
+            'data': {"error": e}
         })
     credentials = flow.credentials
     request_session = requests.session()
