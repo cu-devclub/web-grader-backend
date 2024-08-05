@@ -95,7 +95,7 @@ def main():
                 CASE
                     WHEN CONVERT_TZ(NOW(), '+00:00', '+07:00') >= LAB.Publish THEN 1
                     ELSE 0
-                END AS Pub,
+                END AS Pub
             FROM 
                 question 
             WHERE 
