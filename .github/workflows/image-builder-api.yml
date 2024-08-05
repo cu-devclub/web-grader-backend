@@ -3,11 +3,8 @@ name: API
 on:
   push:
     branches: [main, testing, latest]
-    paths: [src/**]
+    paths: [api/src/**]
     tags: [ v* ]
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
-    paths: [src/**]
 
 env:
   # Use docker.io for Docker Hub (Default) / Use ghcr.io for GitHub Container Registry
@@ -27,6 +24,9 @@ jobs:
       -
         name: Checkout repository
         uses: actions/checkout@v3
+      - 
+        name: Set up the environment
+        run: mkdir -p ./api/src/config
       -
         name: Make ENVFILE
         uses: SpicyPizza/create-envfile@v2.0
@@ -43,7 +43,7 @@ jobs:
           envkey_PUBKEY: ${{ secrets.PROD_PUBKEY }}
           envkey_PRIKEY: ${{ secrets.PROD_PRIKEY }}
           file_name: .env
-          directory: ./src/config/
+          directory: ./api/src/config/
       -
         name: create-json
         id: create-json
@@ -51,7 +51,7 @@ jobs:
         with:
           name: "client_secrets.json"
           json: ${{ secrets.PROD_CLIENT_SECRETS }}
-          dir: 'src/config/'
+          dir: 'api/src/config/'
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,6 +67,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             latest=auto
+            prefix=api-,onlatest=true
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -90,7 +91,7 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
-          context: "."
+          context: "./api"
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
