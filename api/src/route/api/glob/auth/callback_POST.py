@@ -5,6 +5,7 @@ from function.loadconfig import config
 from binascii import unhexlify
 from datetime import datetime
 import pytz
+import base64
 
 from google.oauth2 import id_token
 from pip._vendor import cachecontrol
@@ -58,7 +59,7 @@ def main():
     if cred is not None:
         try:
             private_key = serialization.load_pem_private_key(config["PRIKEY"].encode('utf-8'), password=None)
-            encrypted_message = unhexlify(cred)
+            encrypted_message = base64.urlsafe_b64decode(cred)
             decrypted_message = private_key.decrypt(
                 encrypted_message,
                 padding.OAEP(
