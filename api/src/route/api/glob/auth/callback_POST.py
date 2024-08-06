@@ -56,6 +56,7 @@ def main():
     # cred = request.json['credential']
 
     
+    print(cred)
 
     if cred is not None:
         try:
@@ -74,7 +75,9 @@ def main():
 
         if cred is not None:
             DMS = decrypted_message.split("_")
-    
+    print(decrypted_message)
+    print(DMS)
+
     if len(DMS) != 3:
         return jsonify({
             'success': False,
