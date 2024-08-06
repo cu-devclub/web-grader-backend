@@ -2,8 +2,7 @@ import datetime
 import mysql.connector
 from flask import jsonify, request
 from function.loadconfig import config
-from binascii import unhexlify
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import base64
 
@@ -138,7 +137,7 @@ def main():
             'data': {}
         }), 200
 
-    expires_access = datetime.timedelta(days=30)
+    expires_access = timedelta(days=30)
 
 
     ac_token_data = {
