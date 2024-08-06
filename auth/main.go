@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -137,7 +138,9 @@ func handleGoogleCallback(c *gin.Context) {
 	oaepDigests := sha256.New()
 	ciphertext, _ := rsa.EncryptOAEP(oaepDigests, rand.Reader, spkiKey, plaintext, oaepLabel)
 
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/callback?credential=%s", ciphertext))
+	encodedCiphertext := base64.URLEncoding.EncodeToString(ciphertext)
+
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/callback?credential=%s", encodedCiphertext))
 
 	// c.JSON(http.StatusOK, gin.H{
 	// 	"user_info": userInfo,
