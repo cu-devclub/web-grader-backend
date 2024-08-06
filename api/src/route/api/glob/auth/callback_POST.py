@@ -55,9 +55,6 @@ def main():
 
     # cred = request.json['credential']
 
-    
-    print(cred)
-
     if cred is not None:
         try:
             private_key = serialization.load_pem_private_key(config["PRIKEY"].encode('utf-8'), password=None)
@@ -75,14 +72,14 @@ def main():
 
         if cred is not None:
             DMS = decrypted_message.split("_")
-    print(decrypted_message)
-    print(DMS)
 
     if len(DMS) != 3:
         return jsonify({
             'success': False,
             'msg': 'Credentials is not valid.',
-            'data': {}
+            'data': {
+                "x": [decrypted_message, DMS, cred]
+            }
         }), 200
 
     id_info = {
