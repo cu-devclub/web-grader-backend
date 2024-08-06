@@ -19,12 +19,16 @@ from cryptography.hazmat.primitives import serialization
 from function.db import get_db
 from function.google import flow, GOOGLE_CLIENT_ID
 
+from urllib.parse import urlparse, parse_qs
+
 
 def main():
     # https://sci.cugrader.com/callback?credential=Q%07nsb%a2Ro%18%ea%3Cx%18}%a4%dc#3L-%bb%9f%d1%96%9b%9f%8e%01%a4%a3%8e%d9&%ebMk%a9%b6I+%f0%a3%93%9a%06W%bd%fa!%07%83i9%e0%ab%ac%85%bf%9cO%98%b3%92%a2%89%bc1%02A%8d%d7%d3%%ba%c6%9d%14%93q%9d%fa3WL=i%ec%82%11SWn%85z%fc%cc%c0-8%01%a1%18%9b%b6%d3%ee%86DI%c6u%a8%db%f7|\%f8%car%c8%19%96~3%eb'%f1%ab%80%b3%0Cy)%17%f2%9dy%3C%f1Q%b6%ae%84Q%9b%7Fs%ca1&%e3o%b5e5%c1%d3H%87%85%0F^%0BX%3C%f9%91%e9(%1E%ea%d4%8d%d5'%f4%f85%b1w%b9r%c0R%d3LB%1B%ce%1C%a0%99%d3%fe%d6p%bb2%f5%1D%e25%b19Y%8c%ff%7F%e7S%81%ac%dfg%e00%a5_%ed%bf%87%8cN1%c1%a8%e4%22,%c2T{%eesmM%19%e1%b0c{U%c9%99%04%91h%be%d4%d9((H%e8%92%a6
     # urldict = {x[0] : x[1] for x in [x.split("=") for x in request.json['url'].split("?")[1].split("&") ]}
     # cred = urldict['credential']
-    cred = request.json['url'].split("?")[1].split("=")[1]
+    parsed_url = urlparse(request.json['url'])
+    query_params = parse_qs(parsed_url.query)
+    cred = query_params.get('credential', [None])[0]
     # logging.print(request.json['state'], "from client")
     # logging.print(urldict["state"], "from google")
     # if not request.json['state'] == urldict["state"]:
