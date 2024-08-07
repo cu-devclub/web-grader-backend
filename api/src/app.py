@@ -52,7 +52,7 @@ app.config['JWT_SECRET_KEY'] = config['JWT_SECRET_KEY']
 app.config['JWT_COOKIE_SAMESITE'] = "None"
 app.config['JWT_COOKIE_SECURE'] = True
 
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 jwt = JWTManager(app)
 
@@ -125,6 +125,5 @@ print(tabulate(mount_info, headers=['Route', 'Method', "Path"]))
 
 # start api server
 if __name__ == "__main__":
-    # app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']))
-    app.run(debug=True, host=config['HOST'], port=int(config['PORT']))
+    app.run(debug=isDev, host=config['HOST'], port=int(config['PORT']))
     
