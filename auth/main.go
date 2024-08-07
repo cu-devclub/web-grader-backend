@@ -78,11 +78,6 @@ func main() {
 	r.Run(":5050")
 }
 
-// func handleMain(c *gin.Context) {
-// 	var html = `<html><body><a href="/auth/login">Google Log In</a></body></html>`
-// 	c.Writer.Write([]byte(html))
-// }
-
 func handleGoogleLogin(c *gin.Context) {
 	state := uuid.New().String()
 	session := sessions.Default(c)
@@ -141,10 +136,4 @@ func handleGoogleCallback(c *gin.Context) {
 	encodedCiphertext := base64.URLEncoding.EncodeToString(ciphertext)
 
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/callback?credential=%s", encodedCiphertext))
-
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"user_info": userInfo,
-	// 	"hashed":    ciphertext,
-	// 	"time":      time.Now().In(location).Format("2006-01-02 15:04:05"),
-	// })
 }
