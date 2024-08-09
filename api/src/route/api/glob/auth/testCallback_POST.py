@@ -5,14 +5,14 @@ from flask import jsonify, request
 from function.db import get_db
 import re
 
-from function.loadconfig import config
+from function.loadconfig import config, isDev
 
 from flask_jwt_extended import create_access_token, set_access_cookies, get_csrf_token
 
 regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
 
 def main():
-    if not config['DEV'].lower() == "true":
+    if not isDev:
         return jsonify({
             'success': False,
             'msg': '',

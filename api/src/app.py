@@ -13,7 +13,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from function.google import secret_key
 
 from function.db import get_db
-from function.loadconfig import config, UPLOAD_FOLDER
+from function.loadconfig import config, UPLOAD_FOLDER, isDev
 
 
 # list route file
@@ -37,7 +37,7 @@ for i in list_route:
 app = Flask(__name__)
 
 
-isDev = config['DEV'].lower() == "true"
+
 if not isDev:
     CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": config['DOMAIN']}})
 else: 
