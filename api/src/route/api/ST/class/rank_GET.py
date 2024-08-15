@@ -36,23 +36,16 @@ def main():
     # Calculate total max score
     cur.execute("""
         SELECT
-            QST.MaxScore,
-            L.CID,
-            L.GID
+            SUM(QST.MaxScore)
         FROM
             question QST
             JOIN lab L ON QST.LID = L.LID
         WHERE
-            QST.CSYID = %s
-    """, (CSYID,))
+            QST.CSYID = %s AND (JSON_CONTAINS(L.CID, CAST(%s AS JSON), '$') OR JSON_CONTAINS(L.GID, CAST(%s AS JSON), '$')) AND CONVERT_TZ(NOW(), '+00:00', '+07:00') >= L.Publish
+    """, (CSYID, student_CID, student_GID,))
     MaxScoreResult = cur.fetchall()
 
-    total_max_score = 0
-    for MaxScore, CID_json, GID_json in MaxScoreResult:
-        CID_list = json.loads(CID_json) if CID_json else []
-        GID_list = json.loads(GID_json) if GID_json else []
-        if student_CID in CID_list or (student_GID and student_GID in GID_list):
-            total_max_score += int(MaxScore)
+    total_max_score = int(MaxScoreResult[0][0])
 
     # Calculate student's score
     cur.execute("""

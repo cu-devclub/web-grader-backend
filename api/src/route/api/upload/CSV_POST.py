@@ -57,8 +57,10 @@ def main():
 
                 if 'Group' in csv_reader.fieldnames:
                     # Validate groups in CSV
-                    groups = {row['Group'] for row in csv_reader}   
-                    if ('' in groups or '-' in groups) and not ('' in groups and '-' in groups):
+                    groups = {row['Group'] for row in csv_reader}
+                    print(groups)
+                    
+                    if ('' in groups or '-' in groups) and ('' in groups and '-' in groups):
                         return jsonify({'success': False, 'msg': 'Invalid group data\nPlease ensure that there are no empty rows in your CSV file.'})
 
                 # Reset csv reader
