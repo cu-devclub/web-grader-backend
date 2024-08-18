@@ -11,3 +11,14 @@ def get_db():
             database=config['DBNAME'],
         )
     return g.db
+
+def get_dbdict():
+    if 'dbdict' not in g:
+        g.dbdict = pymysql.connect(
+            host=config['DBHOST'],
+            user=config['DBUSER'],
+            password=config['DBPASS'],
+            database=config['DBNAME'],
+            cursorclass=pymysql.cursors.DictCursor,
+        )
+    return g.dbdict
