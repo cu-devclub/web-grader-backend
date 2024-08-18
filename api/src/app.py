@@ -7,12 +7,12 @@ from importlib import import_module
 # Flask
 from flask_cors import CORS
 from flask import app, Flask, Response, g, send_from_directory, send_file, jsonify
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager
 
 # Google
 from function.google import secret_key
 
-from function.db import get_db
+from function.db import get_db, get_dbdict
 from function.loadconfig import config, UPLOAD_FOLDER, isDev
 
 
@@ -68,6 +68,7 @@ def index():
 @app.before_request
 def before_request():
     g.db = get_db()
+    g.dbdict = get_dbdict()
 
 
 @app.teardown_request
@@ -75,6 +76,10 @@ def teardown_request(exception=None):
     db = g.pop('db', None)
     if db is not None:
         db.close()
+        
+    dbdict = g.pop('dbdict', None)
+    if dbdict is not None:
+        dbdict.close()
 
 @app.route('/api/Thumbnail/<filename>')
 def get_image_thumbnail(filename):

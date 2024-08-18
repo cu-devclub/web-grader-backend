@@ -1,6 +1,16 @@
 
 # Change Log
 
+## [v1.2.0] - 2024-08-16
+ 
+### Added
+
+### Changed
+ - Reduce time complexity when get student list.
+
+### Fixed
+
+
 ## [v1.1.0] - 2024-08-15
  
 ### Added
