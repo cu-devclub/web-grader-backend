@@ -64,8 +64,10 @@ def main():
     ac_token_data = {
         "email": email,
         "uid": UID,
-        "role": role
+        "role": DataJ.get("role")
     }
+
+    print(ac_token_data)
 
     access_token = create_access_token(identity=ac_token_data, expires_delta=expires_access)
     ac_token_data['csrf_token'] = get_csrf_token(access_token)
