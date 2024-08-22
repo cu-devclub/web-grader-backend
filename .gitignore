@@ -5,6 +5,7 @@
 .venv/
 old
 api/src/files/UploadFile/*/
+api/src/files
 *.swp
 __pycache__
 test.py
