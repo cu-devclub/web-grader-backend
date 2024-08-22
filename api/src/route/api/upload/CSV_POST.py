@@ -58,8 +58,7 @@ def main():
                 if 'Group' in csv_reader.fieldnames:
                     # Validate groups in CSV
                     groups = {row['Group'] for row in csv_reader}
-                    print(groups)
-                    
+
                     if ('' in groups or '-' in groups) and ('' in groups and '-' in groups):
                         return jsonify({'success': False, 'msg': 'Invalid group data\nPlease ensure that there are no empty rows in your CSV file.'})
 
@@ -104,7 +103,7 @@ def main():
                         cursor.execute("UPDATE class SET useGroup=%s WHERE CSYID=%s", (0, CSYID))
 
                     # insert user to grader
-                    AddUserGrader(connection, cursor, student_id, student_id + "@student.chula.ac.th", student_Name)
+                    AddUserGrader(connection, cursor, student_id, student_id + f"@{"student." if student_id.isnumeric() else ""}chula.ac.th", student_Name)
 
                     # Check if student exists and update or insert
                     cursor.execute("SELECT * FROM student WHERE UID=%s AND CSYID=%s", (student_id, CSYID))
