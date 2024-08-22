@@ -103,7 +103,7 @@ def main():
                         cursor.execute("UPDATE class SET useGroup=%s WHERE CSYID=%s", (0, CSYID))
 
                     # insert user to grader
-                    AddUserGrader(connection, cursor, student_id, student_id + f"@{"student." if student_id.isnumeric() else ""}chula.ac.th", student_Name)
+                    AddUserGrader(connection, cursor, student_id, student_id + f"@{'student.' if student_id.isnumeric() else ''}chula.ac.th", student_Name)
 
                     # Check if student exists and update or insert
                     cursor.execute("SELECT * FROM student WHERE UID=%s AND CSYID=%s", (student_id, CSYID))
