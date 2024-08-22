@@ -1,6 +1,16 @@
 
 # Change Log
 
+## [v1.3.0] - 2024-08-22
+ 
+### Added
+ - Add, Edit, Remove student function.
+
+### Changed
+
+### Fixed
+
+
 ## [v1.2.0] - 2024-08-16
  
 ### Added
