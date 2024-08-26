@@ -26,12 +26,11 @@ def delete_file(file_path):
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-@jwt_required()
 def main():
-    Email = get_jwt_identity()['email']
     conn = get_db()
     cursor = conn.cursor()
     
+    Email = request.form.get("Email")
     UID = Email.split('@')[0]
     uploaded_file = request.files["file"]
     QID = request.form.get("QID")

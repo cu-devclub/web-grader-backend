@@ -1,6 +1,22 @@
 
 # Change Log
 
+## [v1.4.0] - 2024-08-26
+ 
+### Added
+ - Question info column in database
+
+### Changed
+ - Store tester, testcase on database instead of get from file everytime (less complexity)
+ - Load only solution from student
+ - can set to prevent write file method or not
+ - check write file method while adding solution cell (less loop)
+ - set execution timeout to 2 seconds
+
+### Fixed
+ - Empty cell after testcase cause amount of testcase section change
+
+
 ## [v1.3.0] - 2024-08-22
  
 ### Added

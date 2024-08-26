@@ -76,6 +76,11 @@ def update_database(conn, cursor, questions, qnum, source_files, release_files, 
 
                 addfiles = [row[0] for row in result]
 
+                Qinfo = grader.QinfoGenerate(source_path, addfile=addfiles)
+                Qinfo_query = "UPDATE `question` SET `Qinfo`=%s WHERE `QID`=%s"
+                cursor.execute(Qinfo_query, (json.dumps(Qinfo), current_qid))
+                conn.commit()
+
                 select_query = """
                     SELECT 
                         `SID`, 
@@ -83,20 +88,21 @@ def update_database(conn, cursor, questions, qnum, source_files, release_files, 
                     FROM 
                         `submitted` 
                     WHERE
-                        QID = %s AND LID = %s
+                        QID = %s
                 """
-                cursor.execute(select_query, (current_qid, lid))
+                cursor.execute(select_query, (current_qid))
                 result = cursor.fetchall()
 
                 for SID, filepath in result:
-                    err, data = grader.grade(source_path, filepath, addfile=addfiles, validate=False, check_keyword="ok")
+                    err, data = grader.grade(source_path, filepath, addfile=addfiles, validate=False, check_keyword="ok", Qinfo=Qinfo)
                     if err:
-                        return jsonify({
-                            'success': False,
-                            'msg': f'There is a problem while grading.\n{data}',
-                            'data': {}
-                        }), 200
-                    
+                        # return jsonify({
+                        #     'success': False,
+                        #     'msg': f'There is a problem while grading.\n{data}',
+                        #     'data': {}
+                        # }), 200
+                        data = [[0,1]]
+
                     s, m = 0, 0
 
                     if len(data) == 1:
@@ -136,11 +142,19 @@ def update_database(conn, cursor, questions, qnum, source_files, release_files, 
             source_files[str(i)].save(source_path)
             release_files[str(i)].save(release_path)
             
+            select_query = "SELECT Path FROM addfile WHERE LID = %s"
+            cursor.execute(select_query, (lid,))
+            result = cursor.fetchall()
+
+            addfiles = [row[0] for row in result]
+
+            Qinfo = grader.QinfoGenerate(source_path, addfile=addfiles)
+
             # Insert new question
             cursor.execute('''
-                INSERT INTO question (LID, SourcePath, ReleasePath, MaxScore, LastEdit, CSYID)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            ''', (lid, source_path, release_path, str(max_score), datetime.now(gmt_timezone), CSYID))
+                INSERT INTO question (LID, SourcePath, ReleasePath, MaxScore, LastEdit, CSYID, Qinfo)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ''', (lid, source_path, release_path, str(max_score), datetime.now(gmt_timezone), CSYID, Qinfo))
     
     # Delete excess questions
     if existing_qnum > qnum:

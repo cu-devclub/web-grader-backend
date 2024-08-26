@@ -9,6 +9,7 @@ from function.GetCID import GetCID
 from function.GetGID import GetGID
 from function.loadconfig import UPLOAD_FOLDER
 from function.isCET import isCET
+import function.grader as grader
 
 gmt_timezone = pytz.timezone('GMT')
 
@@ -34,6 +35,7 @@ def main():
         Source_files = [v for k, v in request.files.items() if k.startswith("Source")]
         Release_files = [v for k, v in request.files.items() if k.startswith("Release")]
         Additional_files = [v for k, v in request.files.items() if k.startswith("Add")]
+        AddFileForQinfo = []
 
         LockOnDue = form["DueDate"] if form['LockOnDue'] == 'true' else None
 
@@ -60,6 +62,7 @@ def main():
         for i in Additional_files:
             AddPath = os.path.join(AddDirec, i.filename)
             i.save(AddPath)
+            AddFileForQinfo.append(AddPath)
             addFile = "INSERT INTO addfile (LID, Path, CSYID) VALUES (%s, %s, %s)"
             cursor.execute(addFile, (LID, AddPath, form["CSYID"]))
             conn.commit()
@@ -71,8 +74,9 @@ def main():
             PathR = os.path.join(AddDirec, (f"Release_{i}_" + Release_files[i].filename))
             Source_files[i].save(PathS)
             Release_files[i].save(PathR)
-            Qry = "INSERT INTO question (LID, SourcePath, ReleasePath, MaxScore, LastEdit, CSYID) VALUES (%s, %s, %s, %s, %s, %s)"
-            cursor.execute(Qry, (LID, PathS, PathR, Question[i-1]["score"], datetime.now(gmt_timezone), form["CSYID"]))
+            Qinfo = grader.QinfoGenerate(PathS, addfile=AddFileForQinfo)
+            Qry = "INSERT INTO question (LID, SourcePath, ReleasePath, MaxScore, LastEdit, CSYID, Qinfo) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            cursor.execute(Qry, (LID, PathS, PathR, Question[i-1]["score"], datetime.now(gmt_timezone), form["CSYID"], json.dumps(Qinfo)))
             conn.commit()
         
         return jsonify({
