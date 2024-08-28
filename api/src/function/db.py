@@ -12,6 +12,15 @@ def get_db():
         )
     return g.db
 
+def get_puredb():
+    return pymysql.connect(
+        host=config['DBHOST'],
+        user=config['DBUSER'],
+        password=config['DBPASS'],
+        database=config['DBNAME'],
+    )
+    
+
 def get_dbdict():
     if 'dbdict' not in g:
         g.dbdict = pymysql.connect(

@@ -1,10 +1,11 @@
 
 # Change Log
 
-## [v1.4.0] - 2024-08-26
+## [v1.4.0] - 2024-08-29
  
 ### Added
  - Question info column in database
+ - Set max grading thread worker to 1 and store queue on ram
 
 ### Changed
  - Store tester, testcase on database instead of get from file everytime (less complexity)
@@ -12,6 +13,7 @@
  - can set to prevent write file method or not
  - check write file method while adding solution cell (less loop)
  - set execution timeout to 2 seconds
+ - return without waiting grading process
 
 ### Fixed
  - Empty cell after testcase cause amount of testcase section change

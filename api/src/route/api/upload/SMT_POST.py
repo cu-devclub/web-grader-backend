@@ -9,7 +9,8 @@ from function.db import get_db
 from function.isIPYNB import isIPYNB
 from function.loadconfig import UPLOAD_FOLDER, config
 from function.isLock import isLock
-import function.grader as grader
+from function.gradeInBackground import gradeInBackground
+from function.loadconfig import executor
 
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
@@ -267,55 +268,14 @@ def main():
             cursor.execute(sus_query, (UID, LID, QID, 5, "There is problem with signature.", upload_time))
             conn.commit()
             
-        if Qinfo is None:
-            Qinfo = grader.QinfoGenerate(Source, addfile=addfiles)
-            Qinfo_query = "UPDATE `question` SET `Qinfo`=%s WHERE `QID`=%s"
-            cursor.execute(Qinfo_query, (json.dumps(Qinfo), QID))
-            conn.commit()
-
-        err, data = grader.grade(Source, filepath, addfile=addfiles, validate=False, check_keyword="ok", timeout=2, Qinfo=Qinfo)
-        if err:
-            return jsonify({
-                'success': False,
-                'msg': f'There is a problem while grading.\n{data}',
-                'data': {}
-            }), 200
-        
-        s, m = 0, 0
-
-        if len(data) == 1:
-            s += float(data[0][0])  # Ensure data is converted to float
-            m += float(data[0][1])  # Ensure data is converted to float
-        else:
-            for j in range(len(data)):
-                s += float(data[j][0])  # Ensure data is converted to float
-                m += float(data[j][1])  # Ensure data is converted to float
-
-        # Check if m is zero to avoid division by zero
-        if m == 0:
-            Score = 0
-        else:
-            Score = float("{:.2f}".format((s / m) * float(MaxScore)))  # Ensure MaxScore is converted to float
-
-        # Define the insert or update query
-        upsert_query = """
-            INSERT INTO submitted (UID, LID, QID, SummitedFile, Score, Timestamp, CSYID, OriginalName)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                SummitedFile = VALUES(SummitedFile),
-                Score = VALUES(Score),
-                Timestamp = VALUES(Timestamp),
-                OriginalName = VALUES(OriginalName)
-        """
-
-        # Execute the query with the provided values
-        cursor.execute(upsert_query, (UID, LID, QID, filepath, Score, upload_time, CSYID, OriginalFileName))
-        conn.commit()          
+        executor.submit(gradeInBackground, Source, addfiles, filepath, QID, MaxScore, UID, LID, upload_time, CSYID, OriginalFileName, Qinfo)
 
         return jsonify({
             'success': True,
-            'msg': "Record inserted successfully",
-            'data': {}
+            'msg': "Submitted success",
+            'data': {
+                "msg": "Score maybe delay."
+            }
         }), 200
 
     except Exception as e:
