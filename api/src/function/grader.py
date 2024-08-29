@@ -103,6 +103,10 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
         temp_cor_p = 0
         for j in testcaseL[i]:
             temp_max_p += pointsL[num]
+            print("="*10)
+            print(testcaseL)
+            print(j)
+            print(len(ScodeCell))
             test = "".join(ScodeCell[j])
             if(len(addfile) != 0):
                 for k in addfile:
