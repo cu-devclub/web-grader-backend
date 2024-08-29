@@ -107,6 +107,7 @@ def grade(Question, submit, addfile=[], validate=True, timeout=20, check_keyword
             print(testcaseL)
             print(j)
             print(len(ScodeCell))
+            print(ScodeCell[j])
             test = "".join(ScodeCell[j])
             if(len(addfile) != 0):
                 for k in addfile:
